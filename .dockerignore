@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Node modules
+node_modules
+.npm
+
+# Temporary/Cache files
+.eslintcache
+.stylelintcache
+
+# Build outputs (Avoid copying previous builds into image)
+.vinxi
+.output
+dist
+build
+
+# Environment variables (Should be passed at runtime, not baked into image)
+.env
+.env.*
+
+# IDE, OS, and meta files
+.vscode
+.idea
+.DS_Store
+*.md
+README.md
+
+# Reference folder
+referensi
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
