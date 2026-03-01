@@ -1,7 +1,9 @@
 import { createSignal, Show } from "solid-js";
 import { A } from "@solidjs/router";
-import HeroSelector from "../components/HeroSelector";
+import HeroSelector, { heroHasImage } from "../components/HeroSelector";
 import type { SelectedHero } from "../components/HeroSelector";
+import NarrativeInput from "../components/NarrativeInput";
+import type { ScenarioSuggestion } from "../components/NarrativeInput";
 import VideoConfigOptions from "../components/VideoConfigOptions";
 import ResultDisplay from "../components/ResultDisplay";
 
@@ -21,11 +23,16 @@ export default function VideoPage() {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
 
+  // Suggestion state
+  const [suggestions, setSuggestions] = createSignal<ScenarioSuggestion[]>([]);
+  const [suggestLoading, setSuggestLoading] = createSignal(false);
+  const canSuggest = () => selectedHeroes().some(heroHasImage);
+
   // Validation
   const canGenerate = () => {
     if (!narrative().trim()) return false;
     if (selectedHeroes().length === 0) return false;
-    return selectedHeroes().some(sh => sh.base64Data);
+    return selectedHeroes().some(heroHasImage);
   };
 
   // Generate video prompt
@@ -38,12 +45,14 @@ export default function VideoPage() {
 
     try {
       const heroes = selectedHeroes()
-        .filter(sh => sh.base64Data)
-        .map(sh => ({
-          heroName: sh.hero.name,
-          base64Data: sh.base64Data,
-          mimeType: sh.mimeType || "image/webp",
-        }));
+        .filter(heroHasImage)
+        .flatMap(sh =>
+          sh.images.map(img => ({
+            heroName: sh.hero.name,
+            base64Data: img.base64Data,
+            mimeType: img.mimeType,
+          }))
+        );
 
       const response = await fetch("/api/generate-video", {
         method: "POST",
@@ -75,7 +84,52 @@ export default function VideoPage() {
     }
   };
 
-  const [focused, setFocused] = createSignal(false);
+  // Suggest scenarios
+  const handleSuggest = async () => {
+    if (!canSuggest() || suggestLoading()) return;
+
+    setSuggestLoading(true);
+    setSuggestions([]);
+
+    try {
+      const heroes = selectedHeroes()
+        .filter(heroHasImage)
+        .flatMap(sh =>
+          sh.images.map(img => ({
+            heroName: sh.hero.name,
+            base64Data: img.base64Data,
+            mimeType: img.mimeType,
+          }))
+        );
+
+      const response = await fetch("/api/suggest-scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heroes,
+          mode: "video",
+          config: {
+            "Aspect Ratio": aspectRatio(),
+            "Duration": duration(),
+            "Camera Movement": cameraMovement(),
+            "Motion Intensity": motionIntensity(),
+            "Video Style": videoStyle(),
+            "Mood": mood(),
+            "Sound Design": soundDesign(),
+          },
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      setSuggestions(data.suggestions || []);
+    } catch (err: any) {
+      console.error("Suggest error:", err);
+    } finally {
+      setSuggestLoading(false);
+    }
+  };
 
   return (
     <div class="app-container">
@@ -133,24 +187,15 @@ export default function VideoPage() {
         {/* Right Column: Narrative + Generate + Result */}
         <div class="right-col">
           <div class="fade-in fade-in-delay-2">
-            <div class="narrative-section glass-panel">
-              <div class="section-title">
-                <span class="icon">📝</span>
-                Video Scene Narrative
-              </div>
-              <textarea
-                class="narrative-textarea"
-                placeholder="Deskripsikan bagaimana gambar ini harus bergerak... contoh: 'Kamera slowly push in ke wajah hero, rambut tertiup angin pelan, mata berkedip sekali, partikel cahaya mengambang di udara, bayangan bergerak seiring matahari terbenam' atau 'Hero berjalan maju perlahan, jubah berkibar, kamera orbit 180 derajat memperlihatkan lingkungan sekitar'"
-                value={narrative()}
-                onInput={(e) => setNarrative(e.currentTarget.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                rows={6}
-              />
-              <div class="char-count">
-                {narrative().length} characters
-              </div>
-            </div>
+            <NarrativeInput
+              value={narrative()}
+              onChange={setNarrative}
+              promptMode="video"
+              onRequestSuggestions={handleSuggest}
+              suggestions={suggestions()}
+              suggestionsLoading={suggestLoading()}
+              canSuggest={canSuggest()}
+            />
           </div>
 
           {/* Generate Button */}
@@ -177,7 +222,7 @@ export default function VideoPage() {
                   <Show when={selectedHeroes().length === 0}>
                     Select at least one hero ·{" "}
                   </Show>
-                  <Show when={selectedHeroes().length > 0 && !selectedHeroes().some(sh => sh.base64Data)}>
+                  <Show when={selectedHeroes().length > 0 && !selectedHeroes().some(heroHasImage)}>
                     Upload the generated image ·{" "}
                   </Show>
                   <Show when={!narrative().trim()}>

@@ -3,18 +3,29 @@ import type { Hero } from "../lib/heroes";
 import { HEROES, ROLES } from "../lib/heroes";
 import { fileToBase64, getMimeType } from "../lib/utils";
 
+export interface HeroRefImage {
+  file: File;
+  preview: string;
+  base64Data: string;
+  mimeType: string;
+}
+
 export interface SelectedHero {
   hero: Hero;
-  imageFile?: File;
-  imagePreview?: string;
-  base64Data?: string;
-  mimeType?: string;
+  images: HeroRefImage[];
+}
+
+// Keep backward-compat helper: does hero have at least 1 image?
+export function heroHasImage(sh: SelectedHero): boolean {
+  return sh.images.length > 0;
 }
 
 interface HeroSelectorProps {
   selectedHeroes: SelectedHero[];
   onSelectionChange: (heroes: SelectedHero[]) => void;
 }
+
+const MAX_IMAGES_PER_HERO = 5;
 
 export default function HeroSelector(props: HeroSelectorProps) {
   const [search, setSearch] = createSignal("");
@@ -35,34 +46,61 @@ export default function HeroSelector(props: HeroSelectorProps) {
 
   const toggleHero = (hero: Hero) => {
     if (isSelected(hero.id)) {
+      // Revoke all object URLs before removing
+      const existing = props.selectedHeroes.find(sh => sh.hero.id === hero.id);
+      existing?.images.forEach(img => URL.revokeObjectURL(img.preview));
       props.onSelectionChange(
         props.selectedHeroes.filter(sh => sh.hero.id !== hero.id)
       );
     } else {
       props.onSelectionChange([
         ...props.selectedHeroes,
-        { hero },
+        { hero, images: [] },
       ]);
     }
   };
 
   const removeHero = (heroId: string) => {
+    const existing = props.selectedHeroes.find(sh => sh.hero.id === heroId);
+    existing?.images.forEach(img => URL.revokeObjectURL(img.preview));
     props.onSelectionChange(
       props.selectedHeroes.filter(sh => sh.hero.id !== heroId)
     );
   };
 
-  const handleImageUpload = async (heroId: string, file: File) => {
-    const base64 = await fileToBase64(file);
-    const mimeType = getMimeType(file);
-    const preview = URL.createObjectURL(file);
+  const handleImageUpload = async (heroId: string, files: FileList) => {
+    const hero = props.selectedHeroes.find(sh => sh.hero.id === heroId);
+    if (!hero) return;
+
+    const remaining = MAX_IMAGES_PER_HERO - hero.images.length;
+    const filesToProcess = Array.from(files).slice(0, remaining);
+
+    const newImages: HeroRefImage[] = [];
+    for (const file of filesToProcess) {
+      const base64 = await fileToBase64(file);
+      const mimeType = getMimeType(file);
+      const preview = URL.createObjectURL(file);
+      newImages.push({ file, preview, base64Data: base64, mimeType });
+    }
 
     props.onSelectionChange(
       props.selectedHeroes.map(sh =>
         sh.hero.id === heroId
-          ? { ...sh, imageFile: file, imagePreview: preview, base64Data: base64, mimeType }
+          ? { ...sh, images: [...sh.images, ...newImages] }
           : sh
       )
+    );
+  };
+
+  const removeImage = (heroId: string, imgIndex: number) => {
+    props.onSelectionChange(
+      props.selectedHeroes.map(sh => {
+        if (sh.hero.id !== heroId) return sh;
+        const updated = [...sh.images];
+        URL.revokeObjectURL(updated[imgIndex].preview);
+        updated.splice(imgIndex, 1);
+        return { ...sh, images: updated };
+      })
     );
   };
 
@@ -118,51 +156,84 @@ export default function HeroSelector(props: HeroSelectorProps) {
         </For>
       </div>
 
-      {/* Selected Heroes with Image Upload */}
+      {/* Selected Heroes with Multi-Image Upload */}
       <Show when={props.selectedHeroes.length > 0}>
         <div class="selected-heroes">
           <div class="section-title" style={{ "margin-bottom": "8px" }}>
             <span class="icon">📸</span>
             Upload Reference Images
+            <span style={{ "font-size": "0.7rem", color: "var(--text-muted)", "font-weight": "400", "margin-left": "8px" }}>
+              (maks. {MAX_IMAGES_PER_HERO} per hero)
+            </span>
           </div>
           <For each={props.selectedHeroes}>
             {(sh) => (
               <div class="selected-hero-item fade-in">
-                <div class="hero-avatar" style={{ width: "36px", height: "36px", "font-size": "0.8rem" }}>
-                  {getInitials(sh.hero.name)}
-                </div>
-                <div class="selected-hero-info">
-                  <h4>{sh.hero.name}</h4>
-                  <span>{sh.hero.role}</span>
-                </div>
-                <div class="upload-area">
-                  <Show when={sh.imagePreview}>
-                    <img
-                      src={sh.imagePreview}
-                      alt={sh.hero.name}
-                      class="upload-preview"
-                    />
+                {/* Hero info row */}
+                <div class="selected-hero-header">
+                  <div class="hero-avatar" style={{ width: "36px", height: "36px", "font-size": "0.8rem" }}>
+                    {getInitials(sh.hero.name)}
+                  </div>
+                  <div class="selected-hero-info">
+                    <h4>{sh.hero.name}</h4>
+                    <span>{sh.hero.role}</span>
+                  </div>
+                  <Show when={sh.images.length > 0}>
+                    <span class="image-count-badge">
+                      {sh.images.length} gambar
+                    </span>
                   </Show>
-                  <label class={`upload-btn ${sh.imageFile ? "has-image" : ""}`}>
-                    {sh.imageFile ? "✓ Uploaded" : "Upload Image"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        const file = e.currentTarget.files?.[0];
-                        if (file) handleImageUpload(sh.hero.id, file);
-                      }}
-                    />
-                  </label>
+                  <button
+                    class="remove-hero-btn"
+                    onClick={() => removeHero(sh.hero.id)}
+                    title="Remove hero"
+                  >
+                    ×
+                  </button>
                 </div>
-                <button
-                  class="remove-hero-btn"
-                  onClick={() => removeHero(sh.hero.id)}
-                  title="Remove hero"
-                >
-                  ×
-                </button>
+
+                {/* Multi-image gallery */}
+                <div class="hero-images-gallery">
+                  <For each={sh.images}>
+                    {(img, index) => (
+                      <div class="ref-image-thumb">
+                        <img src={img.preview} alt={`${sh.hero.name} ref ${index() + 1}`} />
+                        <button
+                          class="ref-image-remove"
+                          onClick={() => removeImage(sh.hero.id, index())}
+                          title="Hapus gambar"
+                        >
+                          ×
+                        </button>
+                        <span class="ref-image-number">{index() + 1}</span>
+                      </div>
+                    )}
+                  </For>
+
+                  {/* Add image button */}
+                  <Show when={sh.images.length < MAX_IMAGES_PER_HERO}>
+                    <label class="ref-image-add">
+                      <span class="add-icon">+</span>
+                      <span class="add-text">
+                        {sh.images.length === 0 ? "Upload" : "Tambah"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                          const files = e.currentTarget.files;
+                          if (files && files.length > 0) {
+                            handleImageUpload(sh.hero.id, files);
+                          }
+                          // Reset so same file can be re-uploaded
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </Show>
+                </div>
               </div>
             )}
           </For>

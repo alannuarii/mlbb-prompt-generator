@@ -269,7 +269,15 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
   // Build parts array: text prompt + hero reference images
   const parts: Part[] = [];
 
-  // Add hero reference images
+  // Group images by hero name to label multi-angle references
+  const heroCounts = new Map<string, number>();
+  const heroIndexes = new Map<string, number>();
+  for (const hero of params.heroes) {
+    heroCounts.set(hero.heroName, (heroCounts.get(hero.heroName) || 0) + 1);
+    heroIndexes.set(hero.heroName, 0);
+  }
+
+  // Add hero reference images with multi-angle labels
   for (const hero of params.heroes) {
     parts.push({
       inlineData: {
@@ -278,12 +286,31 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
       },
     });
 
-    const imageLabel = params.promptMode === "realistic"
-      ? `[Reference image for ${hero.heroName} — analyze facial features: hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks]`
-      : `[Reference image for ${hero.heroName}]`;
+    const total = heroCounts.get(hero.heroName) || 1;
+    const idx = (heroIndexes.get(hero.heroName) || 0) + 1;
+    heroIndexes.set(hero.heroName, idx);
+
+    let imageLabel: string;
+    if (total > 1) {
+      // Multiple angles
+      imageLabel = params.promptMode === "realistic"
+        ? `[Reference image ${idx} of ${total} for ${hero.heroName} — analyze facial features from this angle: hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks]`
+        : `[Reference image ${idx} of ${total} for ${hero.heroName}]`;
+    } else {
+      imageLabel = params.promptMode === "realistic"
+        ? `[Reference image for ${hero.heroName} — analyze facial features: hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks]`
+        : `[Reference image for ${hero.heroName}]`;
+    }
 
     parts.push({ text: imageLabel });
   }
+
+  // Deduplicate hero names for the user prompt text
+  const uniqueHeroNames = [...new Set(params.heroes.map(h => h.heroName))];
+  const heroListWithCounts = uniqueHeroNames.map(name => {
+    const count = heroCounts.get(name) || 1;
+    return count > 1 ? `- ${name} (${count} reference images from different angles)` : `- ${name}`;
+  }).join("\n");
 
   // Build user prompt based on mode
   let userPrompt: string;
@@ -298,7 +325,7 @@ SCENARIO/NARRATIVE:
 ${params.narrative}
 
 HEROES TO CONVERT TO REALISTIC HUMAN:
-${params.heroes.map(h => `- ${h.heroName}`).join("\n")}
+${heroListWithCounts}
 
 ATTRIBUTE MODE:
 ${attributeModeDesc}
@@ -318,7 +345,7 @@ SCENARIO/NARRATIVE:
 ${params.narrative}
 
 HEROES IN THIS SCENE:
-${params.heroes.map(h => `- ${h.heroName}`).join("\n")}
+${heroListWithCounts}
 
 TECHNICAL CONFIGURATION:
 - Aspect Ratio: ${params.aspectRatio}

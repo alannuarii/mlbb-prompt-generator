@@ -1,8 +1,9 @@
 import { createSignal, Show } from "solid-js";
 import { A } from "@solidjs/router";
-import HeroSelector from "../components/HeroSelector";
+import HeroSelector, { heroHasImage } from "../components/HeroSelector";
 import type { SelectedHero } from "../components/HeroSelector";
 import NarrativeInput from "../components/NarrativeInput";
+import type { ScenarioSuggestion } from "../components/NarrativeInput";
 import ConfigOptions from "../components/ConfigOptions";
 import ResultDisplay from "../components/ResultDisplay";
 
@@ -25,11 +26,18 @@ export default function Home() {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal("");
 
+  // Suggestion state
+  const [suggestions, setSuggestions] = createSignal<ScenarioSuggestion[]>([]);
+  const [suggestLoading, setSuggestLoading] = createSignal(false);
+
+  // Can we request suggestions? Need at least 1 hero with image
+  const canSuggest = () => selectedHeroes().some(heroHasImage);
+
   // Validation
   const canGenerate = () => {
     if (!narrative().trim()) return false;
     if (selectedHeroes().length === 0) return false;
-    return selectedHeroes().some(sh => sh.base64Data);
+    return selectedHeroes().some(heroHasImage);
   };
 
   // Generate prompt
@@ -41,13 +49,16 @@ export default function Home() {
     setResult("");
 
     try {
+      // Flatten: each image becomes a separate HeroImage entry
       const heroes = selectedHeroes()
-        .filter(sh => sh.base64Data)
-        .map(sh => ({
-          heroName: sh.hero.name,
-          base64Data: sh.base64Data,
-          mimeType: sh.mimeType || "image/webp",
-        }));
+        .filter(heroHasImage)
+        .flatMap(sh =>
+          sh.images.map(img => ({
+            heroName: sh.hero.name,
+            base64Data: img.base64Data,
+            mimeType: img.mimeType,
+          }))
+        );
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -77,6 +88,52 @@ export default function Home() {
       setError(err.message || "An unexpected error occurred");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Suggest scenarios
+  const handleSuggest = async () => {
+    if (!canSuggest() || suggestLoading()) return;
+
+    setSuggestLoading(true);
+    setSuggestions([]);
+
+    try {
+      const heroes = selectedHeroes()
+        .filter(heroHasImage)
+        .flatMap(sh =>
+          sh.images.map(img => ({
+            heroName: sh.hero.name,
+            base64Data: img.base64Data,
+            mimeType: img.mimeType,
+          }))
+        );
+
+      const response = await fetch("/api/suggest-scenarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heroes,
+          mode: promptMode(),
+          config: {
+            "Aspect Ratio": aspectRatio(),
+            "Quality": quality(),
+            "Mood/Atmosphere": mood(),
+            "Lighting": lighting(),
+            "Camera Angle": cameraAngle(),
+            "Attribute Mode": promptMode() === "realistic" ? attributeMode() : "N/A (cinematic)",
+          },
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      setSuggestions(data.suggestions || []);
+    } catch (err: any) {
+      console.error("Suggest error:", err);
+    } finally {
+      setSuggestLoading(false);
     }
   };
 
@@ -169,6 +226,10 @@ export default function Home() {
               value={narrative()}
               onChange={setNarrative}
               promptMode={promptMode()}
+              onRequestSuggestions={handleSuggest}
+              suggestions={suggestions()}
+              suggestionsLoading={suggestLoading()}
+              canSuggest={canSuggest()}
             />
           </div>
 
@@ -196,7 +257,7 @@ export default function Home() {
                   <Show when={selectedHeroes().length === 0}>
                     Select at least one hero ·{" "}
                   </Show>
-                  <Show when={selectedHeroes().length > 0 && !selectedHeroes().some(sh => sh.base64Data)}>
+                  <Show when={selectedHeroes().length > 0 && !selectedHeroes().some(heroHasImage)}>
                     Upload at least one reference image ·{" "}
                   </Show>
                   <Show when={!narrative().trim()}>
