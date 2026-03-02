@@ -141,6 +141,16 @@ async function createGeminiCache(params: {
       console.warn(`[Gemini Cache] Content too small for caching — using non-cached mode.`);
       return null;
     }
+    // Handle free-tier / quota exhausted: caching not available
+    if (
+      msg.includes("RESOURCE_EXHAUSTED") ||
+      msg.includes("429") ||
+      msg.includes("limit exceeded") ||
+      msg.includes("FreeTier")
+    ) {
+      console.warn(`[Gemini Cache] Caching not available (quota/free-tier limit) — using non-cached mode.`);
+      return null;
+    }
     // Rethrow unexpected errors
     throw err;
   }
