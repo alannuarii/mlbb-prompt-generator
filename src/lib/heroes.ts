@@ -89,6 +89,7 @@ export const HEROES: Hero[] = [
   { id: "lunox", name: "Lunox", role: "Mage" },
   { id: "luo-yi", name: "Luo Yi", role: "Mage" },
   { id: "lylia", name: "Lylia", role: "Mage" },
+  { id: "marcel", name: "Marcel", role: "Support" },
   { id: "martis", name: "Martis", role: "Fighter" },
   { id: "masha", name: "Masha", role: "Fighter" },
   { id: "mathilda", name: "Mathilda", role: "Support" },

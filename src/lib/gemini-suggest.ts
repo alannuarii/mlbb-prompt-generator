@@ -1,4 +1,11 @@
-import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
+import {
+  buildCacheKey,
+  getOrCreateCache,
+  extractResponseText,
+  cleanResponseText,
+} from "./gemini-cache";
+import type { CacheImagePart } from "./gemini-cache";
 
 const MODEL_NAME = "gemini-2.5-flash";
 
@@ -14,7 +21,7 @@ interface SuggestParams {
   config: Record<string, string>;
 }
 
-// ---- System Instructions per mode ----
+// ---- System Instructions per mode (sama seperti sebelumnya) ----
 
 const SUGGEST_REALISTIC = `You are a creative scenario writer for MLBB (Mobile Legends) hero photoshoots. Your task is to generate unique, vivid scenario ideas that place animated game heroes into REALISTIC, real-world situations.
 
@@ -103,59 +110,96 @@ export async function suggestScenarios(params: SuggestParams): Promise<{ title: 
     throw new Error("GEMINI_API_KEY environment variable is not set");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    systemInstruction: getInstruction(params.mode),
-  });
+  const ai = new GoogleGenAI({ apiKey });
+  const instruction = getInstruction(params.mode);
 
-  const parts: Part[] = [];
+  // ── Bangun image parts untuk cache ──
+  const heroNames = params.heroes.map(h => h.heroName);
+  const imageParts: CacheImagePart[] = [];
+  const imageLabels: string[] = [];
 
-  // Add hero images
   for (const hero of params.heroes) {
-    parts.push({
-      inlineData: {
-        mimeType: hero.mimeType,
-        data: hero.base64Data,
-      },
-    });
-    parts.push({ text: `[Reference image for ${hero.heroName}]` });
+    imageParts.push({ inlineData: { mimeType: hero.mimeType, data: hero.base64Data } });
+    imageLabels.push(`[Reference image for ${hero.heroName}]`);
   }
 
-  // Build config summary
+  // ── Context Caching: cache system instruction + gambar hero ──
+  // Cache key unik per mode + kombinasi hero
+  const cacheKey = buildCacheKey(`suggest::${params.mode}`, heroNames);
+  const cachedContentName = await getOrCreateCache({
+    ai,
+    model: MODEL_NAME,
+    cacheKey,
+    systemInstruction: instruction,
+    imageParts,
+    imageLabels,
+  });
+
+  // ── Bangun user prompt (HANYA teks — gambar sudah di-cache) ──
   const configLines = Object.entries(params.config)
     .filter(([, v]) => v && v.trim())
     .map(([k, v]) => `- ${k}: ${v}`)
     .join("\n");
 
-  const heroNames = [...new Set(params.heroes.map(h => h.heroName))];
+  const heroNameList = [...new Set(heroNames)];
 
-  parts.push({
-    text: `HEROES: ${heroNames.join(", ")}
+  const userPrompt = `HEROES: ${heroNameList.join(", ")}
 
 SELECTED CONFIGURATION:
 ${configLines}
 
-Please generate 3 creative and diverse scenario suggestions for these hero(es) based on the reference images and configuration above.`,
-  });
+Please generate 3 creative and diverse scenario suggestions for these hero(es) based on the reference images and configuration above.`;
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts }],
-    generationConfig: {
+  // ── Generate content ──
+  // Jika cache tersedia → gambar sudah di-cache, kirim teks saja
+  // Jika tidak → kirim gambar + teks bersama di contents
+  let contents: object[];
+  if (cachedContentName) {
+    // Cached mode: gambar sudah di-cache, kirim teks prompt saja
+    contents = [{ role: "user", parts: [{ text: userPrompt }] }];
+  } else {
+    // Non-cached fallback: gambar + teks digabung dalam satu user turn
+    const parts: object[] = [];
+    for (let i = 0; i < imageParts.length; i++) {
+      parts.push(imageParts[i]);
+      parts.push({ text: imageLabels[i] });
+    }
+    parts.push({ text: userPrompt });
+    contents = [{ role: "user", parts }];
+  }
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents,
+    config: {
+      ...(cachedContentName
+        ? { cachedContent: cachedContentName }
+        : { systemInstruction: instruction }
+      ),
       temperature: 1.2,
       maxOutputTokens: 2048,
     },
   });
 
-  const text = result.response.text().trim();
+  // Ekstrak teks secara robust
+  const raw = extractResponseText(response);
 
-  // Clean response
-  let cleaned = text;
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  if (!raw) {
+    console.error("[Gemini Suggest] Empty response. Usage:", response.usageMetadata);
+    throw new Error("Model returned an empty response. Please try again.");
   }
 
-  const parsed = JSON.parse(cleaned);
+  const cleaned = cleanResponseText(raw);
+
+  let parsed: any;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (parseErr) {
+    // Log untuk debug
+    console.error("[Gemini Suggest] JSON parse failed. Raw text (first 500 chars):", raw.substring(0, 500));
+    console.error("[Gemini Suggest] Parse error:", parseErr);
+    throw new Error("AI response was not valid JSON. Please try again.");
+  }
 
   if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error("Invalid response format from AI");

@@ -4,10 +4,12 @@ import { HEROES, ROLES } from "../lib/heroes";
 import { fileToBase64, getMimeType } from "../lib/utils";
 
 export interface HeroRefImage {
-  file: File;
+  file: File | null;       // null jika dari portrait default
   preview: string;
   base64Data: string;
   mimeType: string;
+  isDefault?: boolean;     // flag portrait bawaan
+  filename?: string;       // nama file asli (untuk display)
 }
 
 export interface SelectedHero {
@@ -25,11 +27,22 @@ interface HeroSelectorProps {
   onSelectionChange: (heroes: SelectedHero[]) => void;
 }
 
+interface PortraitItem {
+  filename: string;
+  url: string;
+}
+
 const MAX_IMAGES_PER_HERO = 5;
 
 export default function HeroSelector(props: HeroSelectorProps) {
   const [search, setSearch] = createSignal("");
   const [roleFilter, setRoleFilter] = createSignal("All");
+
+  // Default portrait picker state per-hero
+  const [portraitPickerOpen, setPortraitPickerOpen] = createSignal<string | null>(null);
+  const [portraitList, setPortraitList] = createSignal<PortraitItem[]>([]);
+  const [portraitLoading, setPortraitLoading] = createSignal(false);
+  const [addingPortrait, setAddingPortrait] = createSignal<string | null>(null); // filename in progress
 
   const filteredHeroes = createMemo(() => {
     const s = search().toLowerCase();
@@ -46,12 +59,13 @@ export default function HeroSelector(props: HeroSelectorProps) {
 
   const toggleHero = (hero: Hero) => {
     if (isSelected(hero.id)) {
-      // Revoke all object URLs before removing
       const existing = props.selectedHeroes.find(sh => sh.hero.id === hero.id);
-      existing?.images.forEach(img => URL.revokeObjectURL(img.preview));
+      existing?.images.forEach(img => { if (img.preview.startsWith("blob:")) URL.revokeObjectURL(img.preview); });
       props.onSelectionChange(
         props.selectedHeroes.filter(sh => sh.hero.id !== hero.id)
       );
+      // Close picker if open for this hero
+      if (portraitPickerOpen() === hero.id) setPortraitPickerOpen(null);
     } else {
       props.onSelectionChange([
         ...props.selectedHeroes,
@@ -62,10 +76,11 @@ export default function HeroSelector(props: HeroSelectorProps) {
 
   const removeHero = (heroId: string) => {
     const existing = props.selectedHeroes.find(sh => sh.hero.id === heroId);
-    existing?.images.forEach(img => URL.revokeObjectURL(img.preview));
+    existing?.images.forEach(img => { if (img.preview.startsWith("blob:")) URL.revokeObjectURL(img.preview); });
     props.onSelectionChange(
       props.selectedHeroes.filter(sh => sh.hero.id !== heroId)
     );
+    if (portraitPickerOpen() === heroId) setPortraitPickerOpen(null);
   };
 
   const handleImageUpload = async (heroId: string, files: FileList) => {
@@ -97,15 +112,75 @@ export default function HeroSelector(props: HeroSelectorProps) {
       props.selectedHeroes.map(sh => {
         if (sh.hero.id !== heroId) return sh;
         const updated = [...sh.images];
-        URL.revokeObjectURL(updated[imgIndex].preview);
+        if (updated[imgIndex].preview.startsWith("blob:")) URL.revokeObjectURL(updated[imgIndex].preview);
         updated.splice(imgIndex, 1);
         return { ...sh, images: updated };
       })
     );
   };
 
-  const getInitials = (name: string) =>
-    name.split(/[\s-]/).map(w => w[0]).join("").substring(0, 2).toUpperCase();
+  // ── Portrait Picker ──────────────────────────────────────────────────────
+
+  const openPortraitPicker = async (heroId: string, heroName: string) => {
+    if (portraitPickerOpen() === heroId) {
+      setPortraitPickerOpen(null);
+      return;
+    }
+    setPortraitPickerOpen(heroId);
+    setPortraitList([]);
+    setPortraitLoading(true);
+    try {
+      const res = await fetch(`/api/hero-portraits?hero=${encodeURIComponent(heroName)}`);
+      const data = await res.json();
+      setPortraitList(data.portraits ?? []);
+    } finally {
+      setPortraitLoading(false);
+    }
+  };
+
+  const addDefaultPortrait = async (heroId: string, heroName: string, portrait: PortraitItem) => {
+    const sh = props.selectedHeroes.find(h => h.hero.id === heroId);
+    if (!sh) return;
+    if (sh.images.length >= MAX_IMAGES_PER_HERO) return;
+
+    // Avoid duplicates
+    if (sh.images.some(img => img.filename === portrait.filename && img.isDefault)) return;
+
+    setAddingPortrait(portrait.filename);
+    try {
+      const res = await fetch("/api/hero-portraits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hero: heroName, filename: portrait.filename }),
+      });
+      const data = await res.json();
+      if (!data.base64Data) return;
+
+      const newImage: HeroRefImage = {
+        file: null,
+        preview: portrait.url,
+        base64Data: data.base64Data,
+        mimeType: data.mimeType,
+        isDefault: true,
+        filename: portrait.filename,
+      };
+
+      props.onSelectionChange(
+        props.selectedHeroes.map(s =>
+          s.hero.id === heroId
+            ? { ...s, images: [...s.images, newImage] }
+            : s
+        )
+      );
+    } finally {
+      setAddingPortrait(null);
+    }
+  };
+
+  const isPortraitAdded = (heroId: string, filename: string) => {
+    const sh = props.selectedHeroes.find(h => h.hero.id === heroId);
+    return sh?.images.some(img => img.isDefault && img.filename === filename) ?? false;
+  };
 
   return (
     <div class="hero-selector glass-panel">
@@ -148,7 +223,7 @@ export default function HeroSelector(props: HeroSelectorProps) {
               class={`hero-card ${isSelected(hero.id) ? "selected" : ""}`}
               onClick={() => toggleHero(hero)}
             >
-              <div class="hero-avatar">{getInitials(hero.name)}</div>
+              <img class="hero-avatar" src={`/icon/${hero.name}.png`} alt={hero.name} loading="lazy" />
               <span class="hero-name">{hero.name}</span>
               <span class="hero-role">{hero.role}</span>
             </div>
@@ -171,9 +246,7 @@ export default function HeroSelector(props: HeroSelectorProps) {
               <div class="selected-hero-item fade-in">
                 {/* Hero info row */}
                 <div class="selected-hero-header">
-                  <div class="hero-avatar" style={{ width: "36px", height: "36px", "font-size": "0.8rem" }}>
-                    {getInitials(sh.hero.name)}
-                  </div>
+                  <img class="hero-avatar" src={`/icon/${sh.hero.name}.png`} alt={sh.hero.name} style={{ width: "36px", height: "36px", "object-fit": "cover" }} />
                   <div class="selected-hero-info">
                     <h4>{sh.hero.name}</h4>
                     <span>{sh.hero.role}</span>
@@ -196,8 +269,11 @@ export default function HeroSelector(props: HeroSelectorProps) {
                 <div class="hero-images-gallery">
                   <For each={sh.images}>
                     {(img, index) => (
-                      <div class="ref-image-thumb">
+                      <div class={`ref-image-thumb ${img.isDefault ? "is-default" : ""}`}>
                         <img src={img.preview} alt={`${sh.hero.name} ref ${index() + 1}`} />
+                        <Show when={img.isDefault}>
+                          <span class="default-badge">DEFAULT</span>
+                        </Show>
                         <button
                           class="ref-image-remove"
                           onClick={() => removeImage(sh.hero.id, index())}
@@ -227,13 +303,85 @@ export default function HeroSelector(props: HeroSelectorProps) {
                           if (files && files.length > 0) {
                             handleImageUpload(sh.hero.id, files);
                           }
-                          // Reset so same file can be re-uploaded
                           e.currentTarget.value = "";
                         }}
                       />
                     </label>
                   </Show>
                 </div>
+
+                {/* Default Portrait Picker */}
+                <div class="portrait-picker-section">
+                  <button
+                    class={`portrait-picker-toggle ${portraitPickerOpen() === sh.hero.id ? "active" : ""}`}
+                    onClick={() => openPortraitPicker(sh.hero.id, sh.hero.name)}
+                    disabled={sh.images.length >= MAX_IMAGES_PER_HERO}
+                    title={sh.images.length >= MAX_IMAGES_PER_HERO ? "Slot gambar penuh" : "Gunakan gambar default"}
+                  >
+                    <span class="portrait-picker-icon">🖼️</span>
+                    Gunakan Gambar Default
+                    <span class={`portrait-picker-arrow ${portraitPickerOpen() === sh.hero.id ? "open" : ""}`}>▾</span>
+                  </button>
+
+                  <Show when={portraitPickerOpen() === sh.hero.id}>
+                    <div class="portrait-picker-panel">
+                      <Show when={portraitLoading()}>
+                        <div class="portrait-picker-loading">
+                          <div class="portrait-spinner" />
+                          <span>Memuat gambar...</span>
+                        </div>
+                      </Show>
+
+                      <Show when={!portraitLoading() && portraitList().length === 0}>
+                        <div class="portrait-picker-empty">
+                          <span>Tidak ada gambar default tersedia untuk hero ini.</span>
+                        </div>
+                      </Show>
+
+                      <Show when={!portraitLoading() && portraitList().length > 0}>
+                        <div class="portrait-picker-hint">
+                          Klik gambar untuk menambahkan ke referensi
+                        </div>
+                        <div class="portrait-picker-grid">
+                          <For each={portraitList()}>
+                            {(portrait) => {
+                              const added = () => isPortraitAdded(sh.hero.id, portrait.filename);
+                              const loading = () => addingPortrait() === portrait.filename;
+                              return (
+                                <button
+                                  class={`portrait-item ${added() ? "added" : ""}`}
+                                  onClick={() => !added() && addDefaultPortrait(sh.hero.id, sh.hero.name, portrait)}
+                                  disabled={added() || loading() || sh.images.length >= MAX_IMAGES_PER_HERO}
+                                  title={portrait.filename}
+                                >
+                                  <Show when={loading()}>
+                                    <div class="portrait-item-overlay">
+                                      <div class="portrait-spinner small" />
+                                    </div>
+                                  </Show>
+                                  <Show when={added()}>
+                                    <div class="portrait-item-overlay added-overlay">
+                                      <span class="portrait-check">✓</span>
+                                    </div>
+                                  </Show>
+                                  <img
+                                    src={portrait.url}
+                                    alt={portrait.filename}
+                                    loading="lazy"
+                                  />
+                                  <span class="portrait-item-label">
+                                    {portrait.filename.replace(/\.[^.]+$/, "")}
+                                  </span>
+                                </button>
+                              );
+                            }}
+                          </For>
+                        </div>
+                      </Show>
+                    </div>
+                  </Show>
+                </div>
+
               </div>
             )}
           </For>

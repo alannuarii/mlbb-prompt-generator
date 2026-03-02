@@ -1,4 +1,11 @@
-import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
+import {
+  buildCacheKey,
+  getOrCreateCache,
+  extractResponseText,
+  cleanResponseText,
+} from "./gemini-cache";
+import type { CacheImagePart } from "./gemini-cache";
 
 const MODEL_NAME = "gemini-2.5-flash";
 
@@ -81,31 +88,33 @@ export async function generateVideoPrompt(params: GenerateVideoPromptParams): Pr
     throw new Error("GEMINI_API_KEY environment variable is not set");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    systemInstruction: SYSTEM_INSTRUCTION_VIDEO,
-  });
+  const ai = new GoogleGenAI({ apiKey });
 
-  // Build parts array
-  const parts: Part[] = [];
+  // ── Bangun image parts dan labels ──
+  const heroNames = params.heroes.map(h => h.heroName);
+  const imageParts: CacheImagePart[] = [];
+  const imageLabels: string[] = [];
 
-  // Add reference images (the generated photorealistic still images)
   for (const hero of params.heroes) {
-    parts.push({
-      inlineData: {
-        mimeType: hero.mimeType,
-        data: hero.base64Data,
-      },
-    });
-    parts.push({
-      text: `[Generated photorealistic image containing ${hero.heroName} — analyze the scene, character pose, lighting, and environment for animation]`,
-    });
+    imageParts.push({ inlineData: { mimeType: hero.mimeType, data: hero.base64Data } });
+    imageLabels.push(
+      `[Generated photorealistic image containing ${hero.heroName} — analyze the scene, character pose, lighting, and environment for animation]`
+    );
   }
 
-  // Add the user's narrative and configuration
-  const userPrompt = `
-VIDEO SCENE NARRATIVE:
+  // ── Context Caching: cache system instruction + gambar hero ──
+  const cacheKey = buildCacheKey("gemini::video", heroNames);
+  const cachedContentName = await getOrCreateCache({
+    ai,
+    model: MODEL_NAME,
+    cacheKey,
+    systemInstruction: SYSTEM_INSTRUCTION_VIDEO,
+    imageParts,
+    imageLabels,
+  });
+
+  // ── Bangun user prompt (hanya teks) ──
+  const userPrompt = `VIDEO SCENE NARRATIVE:
 ${params.narrative}
 
 HEROES IN THIS SCENE:
@@ -120,32 +129,50 @@ VIDEO CONFIGURATION:
 - Mood/Atmosphere: ${params.mood || "cinematic dramatic"}
 - Sound Design Direction: ${params.soundDesign || "cinematic ambient"}
 
-Please analyze the uploaded reference image(s) and generate a detailed video animation prompt that brings this still image to life as a cinematic video clip.`;
+Please analyze the reference images and generate a detailed video animation prompt that brings this still image to life as a cinematic video clip.`;
 
-  parts.push({ text: userPrompt });
+  // ── Generate content ──
+  let contents: object[];
+  if (cachedContentName) {
+    contents = [{ role: "user", parts: [{ text: userPrompt }] }];
+  } else {
+    const parts: object[] = [];
+    for (let i = 0; i < imageParts.length; i++) {
+      parts.push(imageParts[i]);
+      parts.push({ text: imageLabels[i] });
+    }
+    parts.push({ text: userPrompt });
+    contents = [{ role: "user", parts }];
+  }
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts }],
-    generationConfig: {
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents,
+    config: {
+      ...(cachedContentName
+        ? { cachedContent: cachedContentName }
+        : { systemInstruction: SYSTEM_INSTRUCTION_VIDEO }
+      ),
       temperature: 1,
       maxOutputTokens: 8192,
     },
   });
 
-  const response = result.response;
-  const text = response.text();
+  const raw = extractResponseText(response);
 
-  // Clean the response
-  let cleaned = text.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  if (!raw) {
+    console.error("[Gemini Video] Empty response. Usage:", response.usageMetadata);
+    throw new Error("Model returned an empty response. Please try again.");
   }
 
-  // Validate JSON
+  const cleaned = cleanResponseText(raw);
+
+  // Validasi JSON
   try {
     JSON.parse(cleaned);
   } catch {
-    throw new Error("The AI response was not valid JSON. Raw response: " + text.substring(0, 500));
+    console.error("[Gemini Video] JSON parse failed. Raw (first 500):", raw.substring(0, 500));
+    throw new Error("The AI response was not valid JSON. Please try again.");
   }
 
   return cleaned;

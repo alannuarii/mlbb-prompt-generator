@@ -1,4 +1,11 @@
-import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
+import {
+  buildCacheKey,
+  getOrCreateCache,
+  extractResponseText,
+  cleanResponseText,
+} from "./gemini-cache";
+import type { CacheImagePart } from "./gemini-cache";
 
 const MODEL_NAME = "gemini-2.5-flash";
 
@@ -250,7 +257,7 @@ function getSystemInstruction(promptMode: "realistic" | "cinematic", referenceMo
 
 
 // =============================================================================
-// PROMPT GENERATION
+// PROMPT GENERATION (dengan Context Caching)
 // =============================================================================
 
 export async function generatePrompt(params: GeneratePromptParams): Promise<string> {
@@ -259,17 +266,10 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
     throw new Error("GEMINI_API_KEY environment variable is not set");
   }
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const ai = new GoogleGenAI({ apiKey });
   const instruction = getSystemInstruction(params.promptMode, params.referenceMode);
-  const model = genAI.getGenerativeModel({
-    model: MODEL_NAME,
-    systemInstruction: instruction,
-  });
 
-  // Build parts array: text prompt + hero reference images
-  const parts: Part[] = [];
-
-  // Group images by hero name to label multi-angle references
+  // ── Bangun image parts dan labels ──
   const heroCounts = new Map<string, number>();
   const heroIndexes = new Map<string, number>();
   for (const hero of params.heroes) {
@@ -277,42 +277,48 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
     heroIndexes.set(hero.heroName, 0);
   }
 
-  // Add hero reference images with multi-angle labels
+  const heroNames = params.heroes.map(h => h.heroName);
+  const imageParts: CacheImagePart[] = [];
+  const imageLabels: string[] = [];
+
   for (const hero of params.heroes) {
-    parts.push({
-      inlineData: {
-        mimeType: hero.mimeType,
-        data: hero.base64Data,
-      },
-    });
+    imageParts.push({ inlineData: { mimeType: hero.mimeType, data: hero.base64Data } });
 
     const total = heroCounts.get(hero.heroName) || 1;
     const idx = (heroIndexes.get(hero.heroName) || 0) + 1;
     heroIndexes.set(hero.heroName, idx);
 
-    let imageLabel: string;
+    let label: string;
     if (total > 1) {
-      // Multiple angles
-      imageLabel = params.promptMode === "realistic"
+      label = params.promptMode === "realistic"
         ? `[Reference image ${idx} of ${total} for ${hero.heroName} — analyze facial features from this angle: hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks]`
         : `[Reference image ${idx} of ${total} for ${hero.heroName}]`;
     } else {
-      imageLabel = params.promptMode === "realistic"
+      label = params.promptMode === "realistic"
         ? `[Reference image for ${hero.heroName} — analyze facial features: hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks]`
         : `[Reference image for ${hero.heroName}]`;
     }
-
-    parts.push({ text: imageLabel });
+    imageLabels.push(label);
   }
 
-  // Deduplicate hero names for the user prompt text
-  const uniqueHeroNames = [...new Set(params.heroes.map(h => h.heroName))];
+  // ── Context Caching: cache system instruction + gambar hero ──
+  const cacheKey = buildCacheKey(`gemini::${params.promptMode}::${params.referenceMode}`, heroNames);
+  const cachedContentName = await getOrCreateCache({
+    ai,
+    model: MODEL_NAME,
+    cacheKey,
+    systemInstruction: instruction,
+    imageParts,
+    imageLabels,
+  });
+
+  // ── Bangun user prompt (hanya teks) ──
+  const uniqueHeroNames = [...new Set(heroNames)];
   const heroListWithCounts = uniqueHeroNames.map(name => {
     const count = heroCounts.get(name) || 1;
     return count > 1 ? `- ${name} (${count} reference images from different angles)` : `- ${name}`;
   }).join("\n");
 
-  // Build user prompt based on mode
   let userPrompt: string;
 
   if (params.promptMode === "realistic") {
@@ -337,9 +343,8 @@ TECHNICAL CONFIGURATION:
 - Lighting Style: ${params.lighting || "volumetric cinematic"}
 - Camera Angle: ${params.cameraAngle || "dynamic wide shot"}
 
-Please analyze the reference images above, extract facial features, and generate a photorealistic conversion prompt that transforms the animated hero(es) into real human(s) while preserving their identity.`;
+Please analyze the reference images, extract facial features, and generate a photorealistic conversion prompt.`;
   } else {
-    // Cinematic mode — no attribute mode
     userPrompt = `
 SCENARIO/NARRATIVE:
 ${params.narrative}
@@ -354,33 +359,52 @@ TECHNICAL CONFIGURATION:
 - Lighting Style: ${params.lighting || "volumetric cinematic"}
 - Camera Angle: ${params.cameraAngle || "dynamic wide shot"}
 
-Please analyze the reference images above and generate the cinematic hyper-realistic JSON prompt.`;
+Please analyze the reference images and generate the cinematic hyper-realistic JSON prompt.`;
   }
 
-  parts.push({ text: userPrompt });
+  // ── Generate content ──
+  let contents: object[];
+  if (cachedContentName) {
+    // Cached: gambar sudah di-cache, kirim teks saja
+    contents = [{ role: "user", parts: [{ text: userPrompt }] }];
+  } else {
+    // Non-cached fallback: gambar + teks dalam satu user turn
+    const parts: object[] = [];
+    for (let i = 0; i < imageParts.length; i++) {
+      parts.push(imageParts[i]);
+      parts.push({ text: imageLabels[i] });
+    }
+    parts.push({ text: userPrompt });
+    contents = [{ role: "user", parts }];
+  }
 
-  const result = await model.generateContent({
-    contents: [{ role: "user", parts }],
-    generationConfig: {
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents,
+    config: {
+      ...(cachedContentName
+        ? { cachedContent: cachedContentName }
+        : { systemInstruction: instruction }
+      ),
       temperature: 1,
       maxOutputTokens: 8192,
     },
   });
 
-  const response = result.response;
-  const text = response.text();
+  const raw = extractResponseText(response);
 
-  // Clean the response — strip any markdown code fences if present
-  let cleaned = text.trim();
-  if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  if (!raw) {
+    console.error("[Gemini Generate] Empty response. Usage:", response.usageMetadata);
+    throw new Error("Model returned an empty response. Please try again.");
   }
 
-  // Validate it's valid JSON
+  const cleaned = cleanResponseText(raw);
+
   try {
     JSON.parse(cleaned);
   } catch {
-    throw new Error("The AI response was not valid JSON. Raw response: " + text.substring(0, 500));
+    console.error("[Gemini Generate] JSON parse failed. Raw (first 500):", raw.substring(0, 500));
+    throw new Error("The AI response was not valid JSON. Please try again.");
   }
 
   return cleaned;

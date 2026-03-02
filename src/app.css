@@ -286,13 +286,8 @@ body::before {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: white;
+  background: var(--bg-secondary);
+  object-fit: cover;
   flex-shrink: 0;
 }
 
@@ -497,6 +492,209 @@ body::before {
 .ref-image-add .add-text {
   font-size: 0.6rem;
   font-weight: 500;
+}
+
+/* ---------- Default Portrait Badge ---------- */
+.ref-image-thumb.is-default {
+  border-color: rgba(139, 92, 246, 0.45);
+}
+
+.default-badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  padding: 1px 4px;
+  background: rgba(139, 92, 246, 0.75);
+  backdrop-filter: blur(4px);
+  border-radius: 3px;
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+/* ---------- Portrait Picker ---------- */
+.portrait-picker-section {
+  margin-top: var(--space-xs);
+}
+
+.portrait-picker-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: rgba(139, 92, 246, 0.07);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.portrait-picker-toggle:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: var(--text-accent);
+}
+
+.portrait-picker-toggle.active {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: var(--text-accent);
+}
+
+.portrait-picker-toggle:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.portrait-picker-icon {
+  font-size: 0.85rem;
+}
+
+.portrait-picker-arrow {
+  font-size: 0.65rem;
+  transition: transform 0.2s ease;
+  margin-left: 2px;
+}
+
+.portrait-picker-arrow.open {
+  transform: rotate(180deg);
+}
+
+.portrait-picker-panel {
+  margin-top: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: var(--radius-md);
+  animation: fadeSlideIn 0.2s ease;
+}
+
+.portrait-picker-hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.portrait-picker-loading,
+.portrait-picker-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.portrait-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--space-sm);
+}
+
+.portrait-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  padding-bottom: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: hidden;
+  font-family: var(--font-sans);
+}
+
+.portrait-item:hover:not(:disabled):not(.added) {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.portrait-item.added {
+  border-color: var(--success);
+  cursor: default;
+}
+
+.portrait-item:disabled:not(.added) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.portrait-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+}
+
+.portrait-item-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0 4px;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.portrait-item.added .portrait-item-label {
+  color: var(--success);
+}
+
+.portrait-item-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 1;
+}
+
+.portrait-item-overlay.added-overlay {
+  background: rgba(52, 211, 153, 0.2);
+}
+
+.portrait-check {
+  font-size: 1.5rem;
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* ---------- Spinner ---------- */
+.portrait-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.portrait-spinner.small {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ---------- Narrative Input ---------- */
@@ -725,6 +923,7 @@ body::before {
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
