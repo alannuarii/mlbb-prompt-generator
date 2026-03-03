@@ -1,4 +1,11 @@
-import { Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
+
+export interface SceneImageData {
+  file: File;
+  preview: string;
+  base64Data: string;
+  mimeType: string;
+}
 
 interface ConfigOptionsProps {
   promptMode: "realistic" | "cinematic";
@@ -9,6 +16,8 @@ interface ConfigOptionsProps {
   cameraAngle: string;
   referenceMode: string;
   attributeMode: string;
+  useSceneImage: boolean;
+  sceneImage: SceneImageData | null;
   onAspectRatioChange: (v: string) => void;
   onQualityChange: (v: string) => void;
   onMoodChange: (v: string) => void;
@@ -16,6 +25,8 @@ interface ConfigOptionsProps {
   onCameraAngleChange: (v: string) => void;
   onReferenceModeChange: (v: string) => void;
   onAttributeModeChange: (v: string) => void;
+  onUseSceneImageChange: (v: boolean) => void;
+  onSceneImageChange: (v: SceneImageData | null) => void;
 }
 
 const ASPECT_RATIOS = [
@@ -91,6 +102,8 @@ const CAMERA_OPTIONS = [
 ];
 
 export default function ConfigOptions(props: ConfigOptionsProps) {
+  const [dragOver, setDragOver] = createSignal(false);
+
   const moodOptions = () =>
     props.promptMode === "realistic"
       ? [...MOOD_CORE, ...MOOD_REALISTIC_EXTRA]
@@ -100,6 +113,37 @@ export default function ConfigOptions(props: ConfigOptionsProps) {
     props.promptMode === "realistic"
       ? [...LIGHTING_CORE, ...LIGHTING_REALISTIC_EXTRA]
       : [...LIGHTING_CORE, ...LIGHTING_CINEMATIC_EXTRA];
+
+  const handleSceneImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Full = reader.result as string;
+      const base64Data = base64Full.split(",")[1];
+      const preview = URL.createObjectURL(file);
+      props.onSceneImageChange({
+        file,
+        preview,
+        base64Data,
+        mimeType: file.type,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeSceneImage = () => {
+    if (props.sceneImage?.preview?.startsWith("blob:")) {
+      URL.revokeObjectURL(props.sceneImage.preview);
+    }
+    props.onSceneImageChange(null);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleSceneImageUpload(file);
+  };
 
   return (
     <div class="config-section glass-panel">
@@ -131,6 +175,75 @@ export default function ConfigOptions(props: ConfigOptionsProps) {
               ? "Hero tetap menggunakan armor/kostum asli tapi diubah jadi realistic (metal asli, leather asli)"
               : "Hero tidak menggunakan atribut game — pakaian menyesuaikan skenario (seragam, casual, dll). Hanya wajah yang dipertahankan."}
           </span>
+        </div>
+      </Show>
+
+      {/* Scene Image Mode — Toggle */}
+      <div class="config-group" style={{ "margin-bottom": "16px" }}>
+        <label class="config-label">Scene Image (Gambar Adegan)</label>
+        <div class="toggle-group">
+          <button
+            class={`toggle-btn ${!props.useSceneImage ? "active" : ""}`}
+            onClick={() => {
+              props.onUseSceneImageChange(false);
+              removeSceneImage();
+            }}
+          >
+            🚫 Tanpa Adegan
+          </button>
+          <button
+            class={`toggle-btn ${props.useSceneImage ? "active" : ""}`}
+            onClick={() => props.onUseSceneImageChange(true)}
+          >
+            🖼️ Gunakan Gambar Adegan
+          </button>
+        </div>
+        <span style={{ "font-size": "0.72rem", color: "var(--text-muted)", "margin-top": "4px" }}>
+          {props.useSceneImage
+            ? "Upload gambar adegan/scene — hero akan ditempatkan seolah-olah berada di skenario dalam gambar tersebut"
+            : "Tidak menggunakan gambar adegan, skenario ditentukan dari teks narasi dan konfigurasi"}
+        </span>
+      </div>
+
+      {/* Scene Image Upload Area */}
+      <Show when={props.useSceneImage}>
+        <div class="config-group" style={{ "margin-bottom": "16px" }}>
+          <Show when={!props.sceneImage}>
+            <label
+              class={`scene-image-dropzone ${dragOver() ? "drag-over" : ""}`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+            >
+              <div class="scene-dropzone-content">
+                <span class="scene-dropzone-icon">🖼️</span>
+                <span class="scene-dropzone-text">Drop gambar adegan di sini atau klik untuk upload</span>
+                <span class="scene-dropzone-hint">Gambar ini akan menjadi referensi adegan/scene untuk hero</span>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.currentTarget.files?.[0];
+                  if (file) handleSceneImageUpload(file);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </label>
+          </Show>
+
+          <Show when={props.sceneImage}>
+            <div class="scene-image-preview">
+              <img src={props.sceneImage!.preview} alt="Scene reference" class="scene-preview-img" />
+              <div class="scene-preview-overlay">
+                <span class="scene-preview-label">📍 Gambar Adegan</span>
+                <button class="scene-preview-remove" onClick={removeSceneImage} title="Hapus gambar adegan">
+                  ×
+                </button>
+              </div>
+            </div>
+          </Show>
         </div>
       </Show>
 

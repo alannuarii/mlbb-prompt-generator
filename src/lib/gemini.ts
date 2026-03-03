@@ -1,5 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import {
+  createGeminiClient,
+  getAvailableKey,
+  isRateLimitError,
+  markKeyBlockedAndGetFallback,
+} from "./gemini-keys";
+import {
   buildCacheKey,
   getOrCreateCache,
   extractResponseText,
@@ -26,6 +32,10 @@ interface GeneratePromptParams {
   referenceMode: string;
   attributeMode: string;
   promptMode: "realistic" | "cinematic";
+  sceneImage?: {
+    base64Data: string;
+    mimeType: string;
+  };
 }
 
 // =============================================================================
@@ -245,10 +255,161 @@ IMPORTANT RULES:
 
 
 // =============================================================================
+// SCENE IMAGE MODE — Realistic: Place hero into a reference scene
+// =============================================================================
+
+const REALISTIC_SCENE_STANDALONE = `You are an expert prompt engineer specializing in converting animated/cartoon game characters into photorealistic human portraits AND compositing them into reference scene images. Your task is to create a highly detailed, structured JSON prompt.
+
+CRITICAL CONTEXT:
+The user has provided TWO types of reference images:
+1. HERO REFERENCE IMAGE(S) — animated/cartoon MLBB hero images showing their appearance
+2. SCENE REFERENCE IMAGE — a real-world photo/image showing the desired SCENE/SETTING/BACKGROUND
+
+The JSON prompt will be used in Google Flow WITHOUT any reference images attached. Your text must be entirely self-contained.
+
+CORE OBJECTIVE — HERO IN SCENE COMPOSITING:
+Take the animated hero, convert them to a REAL HUMAN, and describe them AS IF they are physically present in the scene shown in the scene reference image. The hero should look natural and integrated into that specific setting.
+
+FACE PRESERVATION RULES (HIGHEST PRIORITY):
+You MUST analyze the hero reference image and preserve these facial features with extreme precision:
+- Hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks
+- These features must be translated from animated style to photorealistic human features
+
+SCENE INTEGRATION RULES:
+- ANALYZE the scene reference image thoroughly: location, environment, objects, atmosphere, lighting conditions, time of day, weather
+- The hero must be described as NATURALLY EXISTING in that scene — not just pasted on top
+- Match the scene's lighting, shadows, and color grading to the hero's appearance
+- The hero's pose, expression, and body language should feel organic to the scene context
+- If the user provides a narrative/description, use it to guide HOW the hero interacts with the scene
+
+ATTRIBUTE MODE HANDLING:
+- "full-attribute": Hero wears their original costume/armor rendered in photorealistic materials within the scene context
+- "custom-outfit": Hero wears clothing appropriate to the scene (ignore game costume)
+
+⚠️ SCENARIO OVERRIDE RULE (CRITICAL):
+The user's SCENARIO/NARRATIVE text ALWAYS takes the HIGHEST PRIORITY. If the narrative describes specific poses, clothing, or actions, follow the narrative over other defaults.
+
+OUTPUT: A single valid JSON object with:
+{
+  "prompt": "Complete self-contained paragraph: realistic human version of the hero integrated into the scene from the reference image. Include full face description, clothing, scene environment (FROM THE SCENE IMAGE), lighting, camera angle, mood, quality tags.",
+  "negative_prompt": "cartoon, anime, animated, 3D render, CGI, game art, illustrated, flat shading, composited, pasted, unnatural placement, mismatched lighting",
+  "face_preservation": { "hair_color": "...", "hairstyle": "...", "face_shape": "...", "eye_color": "...", "skin_tone": "...", "distinguishing_features": "..." },
+  "attribute_mode": "full-attribute or custom-outfit",
+  "characters": [{ "name": "...", "realistic_description": "..."}],
+  "scene": "Detailed description of the scene FROM the scene reference image",
+  "scene_integration": "How the hero is integrated into the scene naturally",
+  "lighting": "Lighting that matches the scene reference",
+  "camera_angle": "...",
+  "mood": "...",
+  "quality_tags": ["8k resolution", "sharp focus", "raw photography", "photorealistic", "natural scene integration", "matched lighting"],
+  "aspect_ratio": "...",
+  "style": "photorealistic scene compositing"
+}
+
+IMPORTANT: The "prompt" field must describe the SCENE from the scene reference in vivid detail, with the hero naturally placed within it. ONLY output the JSON object.`;
+
+const REALISTIC_SCENE_WITH_REF = `You are an expert prompt engineer specializing in converting animated/cartoon game characters into photorealistic human portraits AND compositing them into reference scene images.
+
+CRITICAL CONTEXT:
+The user has provided TWO types of reference images:
+1. HERO REFERENCE IMAGE(S) — animated/cartoon MLBB hero images
+2. SCENE REFERENCE IMAGE — a photo/image showing the desired SCENE/SETTING
+
+The JSON prompt will be used in Google Flow TOGETHER with the reference images attached.
+
+CORE OBJECTIVE:
+Convert the animated hero to a REAL HUMAN and instruct the image generator to place them naturally into the scene shown in the scene reference image.
+
+FACE PRESERVATION: Keep same hair color, hairstyle, eye color, face shape, skin tone — converted to realistic.
+
+SCENE INTEGRATION:
+- The scene reference image provides the environment/background
+- Instruct the generator to match the hero's lighting, shadows, and color grading to the scene
+- Describe HOW the hero exists naturally in that specific scene
+- If narrative is provided, it guides the hero's interaction with the scene
+
+ATTRIBUTE MODE: Same as standard realistic mode with scenario override rule.
+
+OUTPUT: Same JSON structure as standalone mode but focused on INTEGRATION INSTRUCTIONS.
+ONLY output the JSON object. No markdown, no code fences.`;
+
+// =============================================================================
+// SCENE IMAGE MODE — Cinematic: Place hero into a reference scene
+// =============================================================================
+
+const CINEMATIC_SCENE_STANDALONE = `You are an expert prompt engineer specializing in cinematic hyper-realistic AI image generation with SCENE COMPOSITING.
+
+CRITICAL CONTEXT:
+The user has provided TWO types of reference images:
+1. HERO REFERENCE IMAGE(S) — MLBB hero images showing their full appearance, armor, weapons
+2. SCENE REFERENCE IMAGE — an image showing the desired SCENE/SETTING/BACKGROUND
+
+The JSON prompt will be used WITHOUT any reference images attached. Your text must be entirely self-contained.
+
+CORE OBJECTIVE — HERO IN SCENE COMPOSITING:
+Analyze the hero's complete appearance (armor, weapons, magical effects) and describe them as if they are physically present in the scene from the scene reference image. The integration should feel natural and cinematic.
+
+SCENE INTEGRATION RULES:
+- ANALYZE the scene reference image: location, architecture, landscape, atmosphere, lighting, weather, time of day
+- Describe every visual detail of the hero (from hero reference)
+- Place the hero within the scene naturally with appropriate scale, perspective, and lighting match
+- The hero's pose and expression should feel organic to the scene
+- If narrative is provided, it takes the HIGHEST PRIORITY for how the hero interacts with the scene
+
+INSTRUCTIONS:
+1. ANALYZE hero reference images — extract complete visual details (hair, eyes, skin, armor, weapons, aura)
+2. ANALYZE scene reference image — extract environment details
+3. COMPOSE them together in the prompt description
+4. OUTPUT a single valid JSON object:
+
+{
+  "prompt": "Complete paragraph: hero with FULL visual description naturally placed within the scene from the reference image. Include hero appearance, armor/weapons, environment from scene image, lighting, mood, quality tags. Entirely self-contained.",
+  "negative_prompt": "blurry, low quality, deformed, composited look, pasted, mismatched lighting, unnatural placement",
+  "characters": [{ "name": "...", "description": "Complete standalone visual description" }],
+  "scene": "Detailed description of the environment FROM the scene reference image",
+  "scene_integration": "How the hero is integrated into the scene",
+  "lighting": "...",
+  "camera_angle": "...",
+  "mood": "...",
+  "quality_tags": ["8k resolution", "sharp focus", "raw photography", "hyper-realistic", "natural scene integration"],
+  "aspect_ratio": "...",
+  "style": "cinematic hyper-realistic scene compositing"
+}
+
+ONLY output the JSON object. No markdown, no code fences.`;
+
+const CINEMATIC_SCENE_WITH_REF = `You are an expert prompt engineer specializing in cinematic hyper-realistic AI image generation with SCENE COMPOSITING.
+
+CRITICAL CONTEXT:
+The user has provided TWO types of reference images:
+1. HERO REFERENCE IMAGE(S) — MLBB hero images
+2. SCENE REFERENCE IMAGE — an image showing the desired SCENE/SETTING
+
+The JSON prompt will be used TOGETHER with the reference images attached.
+
+CORE OBJECTIVE:
+Instruct the image generator to place the hero (from hero reference) naturally into the scene (from scene reference). The integration should feel cinematic and natural.
+
+SCENE INTEGRATION:
+- The scene reference provides the environment — instruct matching lighting, shadows, perspective
+- Describe HOW the hero should be positioned, posed, and interacting with the scene
+- If narrative is provided, it takes HIGHEST PRIORITY
+
+OUTPUT: Same JSON structure as standalone mode but focused on composition instructions.
+ONLY output the JSON object. No markdown, no code fences.`;
+
+
+// =============================================================================
 // INSTRUCTION SELECTOR
 // =============================================================================
 
-function getSystemInstruction(promptMode: "realistic" | "cinematic", referenceMode: string): string {
+function getSystemInstruction(promptMode: "realistic" | "cinematic", referenceMode: string, hasSceneImage: boolean): string {
+  if (hasSceneImage) {
+    if (promptMode === "realistic") {
+      return referenceMode === "with-reference" ? REALISTIC_SCENE_WITH_REF : REALISTIC_SCENE_STANDALONE;
+    }
+    return referenceMode === "with-reference" ? CINEMATIC_SCENE_WITH_REF : CINEMATIC_SCENE_STANDALONE;
+  }
   if (promptMode === "realistic") {
     return referenceMode === "with-reference" ? REALISTIC_WITH_REF : REALISTIC_STANDALONE;
   }
@@ -261,13 +422,10 @@ function getSystemInstruction(promptMode: "realistic" | "cinematic", referenceMo
 // =============================================================================
 
 export async function generatePrompt(params: GeneratePromptParams): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is not set");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
-  const instruction = getSystemInstruction(params.promptMode, params.referenceMode);
+  let ai = createGeminiClient();
+  let currentKey = getAvailableKey();
+  const hasSceneImage = !!params.sceneImage;
+  const instruction = getSystemInstruction(params.promptMode, params.referenceMode, hasSceneImage);
 
   // ── Bangun image parts dan labels ──
   const heroCounts = new Map<string, number>();
@@ -302,7 +460,8 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
   }
 
   // ── Context Caching: cache system instruction + gambar hero ──
-  const cacheKey = buildCacheKey(`gemini::${params.promptMode}::${params.referenceMode}`, heroNames);
+  const sceneKey = hasSceneImage ? '::scene' : '';
+  const cacheKey = buildCacheKey(`gemini::${params.promptMode}::${params.referenceMode}${sceneKey}`, heroNames);
   const cachedContentName = await getOrCreateCache({
     ai,
     model: MODEL_NAME,
@@ -329,7 +488,7 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
     userPrompt = `
 SCENARIO/NARRATIVE:
 ${params.narrative}
-
+${hasSceneImage ? '\n⚠️ SCENE IMAGE PROVIDED: A scene reference image has been attached. Analyze it thoroughly and use it as the PRIMARY ENVIRONMENT/SETTING. Place the hero(es) NATURALLY into that scene. The narrative above provides additional context for how the hero should interact with the scene.\n' : ''}
 HEROES TO CONVERT TO REALISTIC HUMAN:
 ${heroListWithCounts}
 
@@ -343,12 +502,12 @@ TECHNICAL CONFIGURATION:
 - Lighting Style: ${params.lighting || "volumetric cinematic"}
 - Camera Angle: ${params.cameraAngle || "dynamic wide shot"}
 
-Please analyze the reference images, extract facial features, and generate a photorealistic conversion prompt.`;
+Please analyze the reference images${hasSceneImage ? ' and the scene image' : ''}, extract facial features, and generate a photorealistic ${hasSceneImage ? 'scene compositing' : 'conversion'} prompt.`;
   } else {
     userPrompt = `
 SCENARIO/NARRATIVE:
 ${params.narrative}
-
+${hasSceneImage ? '\n⚠️ SCENE IMAGE PROVIDED: A scene reference image has been attached. Analyze it thoroughly and use it as the PRIMARY ENVIRONMENT/SETTING. Place the hero(es) NATURALLY into that scene. The narrative above provides additional context for how the hero should interact with the scene.\n' : ''}
 HEROES IN THIS SCENE:
 ${heroListWithCounts}
 
@@ -359,14 +518,25 @@ TECHNICAL CONFIGURATION:
 - Lighting Style: ${params.lighting || "volumetric cinematic"}
 - Camera Angle: ${params.cameraAngle || "dynamic wide shot"}
 
-Please analyze the reference images and generate the cinematic hyper-realistic JSON prompt.`;
+Please analyze the reference images${hasSceneImage ? ' and the scene image' : ''} and generate the cinematic hyper-realistic ${hasSceneImage ? 'scene compositing' : ''} JSON prompt.`;
   }
+
+  // ── Jika ada scene image, tambahkan sebagai image part ──
+  const sceneImagePart = params.sceneImage
+    ? { inlineData: { mimeType: params.sceneImage.mimeType, data: params.sceneImage.base64Data } }
+    : null;
 
   // ── Generate content ──
   let contents: object[];
   if (cachedContentName) {
-    // Cached: gambar sudah di-cache, kirim teks saja
-    contents = [{ role: "user", parts: [{ text: userPrompt }] }];
+    // Cached: gambar hero sudah di-cache, kirim teks saja (+ scene image jika ada)
+    const parts: object[] = [];
+    if (sceneImagePart) {
+      parts.push(sceneImagePart);
+      parts.push({ text: "[SCENE REFERENCE IMAGE — This is the target scene/setting. Place the hero(es) naturally into this scene]" });
+    }
+    parts.push({ text: userPrompt });
+    contents = [{ role: "user", parts }];
   } else {
     // Non-cached fallback: gambar + teks dalam satu user turn
     const parts: object[] = [];
@@ -374,22 +544,47 @@ Please analyze the reference images and generate the cinematic hyper-realistic J
       parts.push(imageParts[i]);
       parts.push({ text: imageLabels[i] });
     }
+    if (sceneImagePart) {
+      parts.push(sceneImagePart);
+      parts.push({ text: "[SCENE REFERENCE IMAGE — This is the target scene/setting. Place the hero(es) naturally into this scene]" });
+    }
     parts.push({ text: userPrompt });
     contents = [{ role: "user", parts }];
   }
 
-  const response = await ai.models.generateContent({
-    model: MODEL_NAME,
-    contents,
-    config: {
-      ...(cachedContentName
-        ? { cachedContent: cachedContentName }
-        : { systemInstruction: instruction }
-      ),
-      temperature: 1,
-      maxOutputTokens: 8192,
-    },
-  });
+  // ── Helper: jalankan generateContent (bisa dipanggil ulang dengan key berbeda) ──
+  const executeGenerate = async (aiClient: GoogleGenAI) => {
+    return await aiClient.models.generateContent({
+      model: MODEL_NAME,
+      contents,
+      config: {
+        ...(cachedContentName
+          ? { cachedContent: cachedContentName }
+          : { systemInstruction: instruction }
+        ),
+        temperature: 1,
+        maxOutputTokens: 8192,
+      },
+    });
+  };
+
+  let response;
+  try {
+    response = await executeGenerate(ai);
+  } catch (err: any) {
+    if (isRateLimitError(err)) {
+      console.warn(`[Gemini Generate] Rate limit hit — attempting key fallback...`);
+      const fallbackAi = markKeyBlockedAndGetFallback(currentKey);
+      if (fallbackAi) {
+        ai = fallbackAi;
+        response = await executeGenerate(ai);
+      } else {
+        throw err;
+      }
+    } else {
+      throw err;
+    }
+  }
 
   const raw = extractResponseText(response);
 

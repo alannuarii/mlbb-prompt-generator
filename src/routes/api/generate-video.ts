@@ -1,20 +1,13 @@
 import type { APIEvent } from "@solidjs/start/server";
-import { generateVideoPrompt } from "../../lib/gemini-video";
+import { generateVideoPrompt, generateMultiSceneVideoPrompt } from "../../lib/gemini-video";
 
 export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { narrative, heroes, aspectRatio, duration, cameraMovement, motionIntensity, videoStyle, mood, soundDesign } = body;
+    const { videoMode, heroes } = body;
 
-    // Validate required fields
-    if (!narrative || !narrative.trim()) {
-      return new Response(
-        JSON.stringify({ error: "Video scene narrative is required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
+    // Validate heroes
     if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
       return new Response(
         JSON.stringify({ error: "At least one hero must be selected" }),
@@ -33,21 +26,65 @@ export async function POST(event: APIEvent) {
       );
     }
 
-    const result = await generateVideoPrompt({
-      narrative,
-      heroes: heroes.map((h: any) => ({
-        heroName: h.heroName,
-        base64Data: h.base64Data,
-        mimeType: h.mimeType,
-      })),
-      aspectRatio: aspectRatio || "16:9",
-      duration: duration || "8 seconds",
-      cameraMovement: cameraMovement || "slow push in",
-      motionIntensity: motionIntensity || "moderate",
-      videoStyle: videoStyle || "cinematic film",
-      mood: mood || "cinematic dramatic",
-      soundDesign: soundDesign || "cinematic ambient",
-    });
+    const mappedHeroes = heroesWithImages.map((h: any) => ({
+      heroName: h.heroName,
+      base64Data: h.base64Data,
+      mimeType: h.mimeType,
+    }));
+
+    let result: string;
+
+    if (videoMode === "multi-scene") {
+      // === MULTI-SCENE MODE ===
+      const { scenes, overallNarrative, aspectRatio, videoStyle, mood, soundDesign } = body;
+
+      if (!scenes || !Array.isArray(scenes) || scenes.length < 2) {
+        return new Response(
+          JSON.stringify({ error: "Multi-scene mode requires at least 2 scenes" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      result = await generateMultiSceneVideoPrompt({
+        heroes: mappedHeroes,
+        overallNarrative: overallNarrative || "",
+        scenes: scenes.map((s: any) => ({
+          sceneNumber: s.sceneNumber,
+          narrative: s.narrative,
+          duration: s.duration || "4 seconds",
+          cameraMovement: s.cameraMovement || "slow push in",
+          motionIntensity: s.motionIntensity || "moderate",
+          transition: s.transition || "smooth crossfade",
+        })),
+        aspectRatio: aspectRatio || "16:9",
+        videoStyle: videoStyle || "cinematic film",
+        mood: mood || "cinematic dramatic",
+        soundDesign: soundDesign || "cinematic ambient",
+      });
+    } else {
+      // === SINGLE MODE ===
+      const { narrative, aspectRatio, duration, cameraMovement, motionIntensity, videoStyle, mood, soundDesign, singleMode } = body;
+
+      if (!narrative || !narrative.trim()) {
+        return new Response(
+          JSON.stringify({ error: "Video scene narrative is required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      result = await generateVideoPrompt({
+        narrative,
+        heroes: mappedHeroes,
+        aspectRatio: aspectRatio || "16:9",
+        duration: duration || "8 seconds",
+        cameraMovement: cameraMovement || "slow push in",
+        motionIntensity: motionIntensity || "moderate",
+        videoStyle: videoStyle || "cinematic film",
+        mood: mood || "cinematic dramatic",
+        soundDesign: soundDesign || "cinematic ambient",
+        singleMode: singleMode || "frame",
+      });
+    }
 
     return new Response(
       JSON.stringify({ result }),

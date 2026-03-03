@@ -5,6 +5,7 @@ import type { SelectedHero } from "../components/HeroSelector";
 import NarrativeInput from "../components/NarrativeInput";
 import type { ScenarioSuggestion } from "../components/NarrativeInput";
 import ConfigOptions from "../components/ConfigOptions";
+import type { SceneImageData } from "../components/ConfigOptions";
 import ResultDisplay from "../components/ResultDisplay";
 
 export default function Home() {
@@ -21,6 +22,8 @@ export default function Home() {
   const [cameraAngle, setCameraAngle] = createSignal("dynamic wide shot");
   const [referenceMode, setReferenceMode] = createSignal("with-reference");
   const [attributeMode, setAttributeMode] = createSignal("full-attribute");
+  const [useSceneImage, setUseSceneImage] = createSignal(false);
+  const [sceneImage, setSceneImage] = createSignal<SceneImageData | null>(null);
 
   const [result, setResult] = createSignal("");
   const [loading, setLoading] = createSignal(false);
@@ -60,6 +63,11 @@ export default function Home() {
           }))
         );
 
+      // Build scene image payload if present
+      const sceneImagePayload = useSceneImage() && sceneImage()
+        ? { base64Data: sceneImage()!.base64Data, mimeType: sceneImage()!.mimeType }
+        : null;
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,6 +82,7 @@ export default function Home() {
           referenceMode: referenceMode(),
           attributeMode: attributeMode(),
           promptMode: promptMode(),
+          sceneImage: sceneImagePayload,
         }),
       });
 
@@ -208,6 +217,8 @@ export default function Home() {
               cameraAngle={cameraAngle()}
               referenceMode={referenceMode()}
               attributeMode={attributeMode()}
+              useSceneImage={useSceneImage()}
+              sceneImage={sceneImage()}
               onAspectRatioChange={setAspectRatio}
               onQualityChange={setQuality}
               onMoodChange={setMood}
@@ -215,6 +226,8 @@ export default function Home() {
               onCameraAngleChange={setCameraAngle}
               onReferenceModeChange={setReferenceMode}
               onAttributeModeChange={setAttributeMode}
+              onUseSceneImageChange={setUseSceneImage}
+              onSceneImageChange={setSceneImage}
             />
           </div>
         </div>
@@ -226,10 +239,11 @@ export default function Home() {
               value={narrative()}
               onChange={setNarrative}
               promptMode={promptMode()}
-              onRequestSuggestions={handleSuggest}
+              onRequestSuggestions={useSceneImage() ? undefined : handleSuggest}
               suggestions={suggestions()}
               suggestionsLoading={suggestLoading()}
               canSuggest={canSuggest()}
+              useSceneImage={useSceneImage()}
             />
           </div>
 

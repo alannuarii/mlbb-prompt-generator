@@ -5,7 +5,7 @@ export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { narrative, heroes, aspectRatio, quality, mood, lighting, cameraAngle, referenceMode, attributeMode, promptMode } = body;
+    const { narrative, heroes, aspectRatio, quality, mood, lighting, cameraAngle, referenceMode, attributeMode, promptMode, sceneImage } = body;
 
     // Validate required fields
     if (!narrative || !narrative.trim()) {
@@ -34,6 +34,11 @@ export async function POST(event: APIEvent) {
       );
     }
 
+    // Build scene image if provided
+    const sceneImageData = sceneImage && sceneImage.base64Data && sceneImage.mimeType
+      ? { base64Data: sceneImage.base64Data, mimeType: sceneImage.mimeType }
+      : undefined;
+
     const result = await generatePrompt({
       narrative,
       heroes: heroes.map((h: any) => ({
@@ -49,6 +54,7 @@ export async function POST(event: APIEvent) {
       referenceMode: referenceMode || "with-reference",
       attributeMode: attributeMode || "full-attribute",
       promptMode: promptMode || "realistic",
+      sceneImage: sceneImageData,
     });
 
     return new Response(

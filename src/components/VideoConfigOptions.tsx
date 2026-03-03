@@ -1,13 +1,15 @@
+import { Show } from "solid-js";
+
 interface VideoConfigOptionsProps {
+  videoMode: "single" | "multi-scene";
+  singleMode?: "frame" | "ingredient";
   aspectRatio: string;
-  duration: string;
   cameraMovement: string;
   motionIntensity: string;
   videoStyle: string;
   mood: string;
   soundDesign: string;
   onAspectRatioChange: (v: string) => void;
-  onDurationChange: (v: string) => void;
   onCameraMovementChange: (v: string) => void;
   onMotionIntensityChange: (v: string) => void;
   onVideoStyleChange: (v: string) => void;
@@ -22,11 +24,6 @@ const ASPECT_RATIOS = [
   { value: "4:5", label: "4:5 Social" },
 ];
 
-const DURATIONS = [
-  { value: "4 seconds", label: "4s Quick" },
-  { value: "8 seconds", label: "8s Standard" },
-  { value: "16 seconds", label: "16s Extended" },
-];
 
 const CAMERA_MOVEMENTS = [
   { value: "static with subtle drift", label: "Static (Subtle Drift)" },
@@ -88,44 +85,42 @@ const SOUND_DESIGNS = [
 ];
 
 export default function VideoConfigOptions(props: VideoConfigOptionsProps) {
+  const configTitle = () => {
+    if (props.videoMode === "multi-scene") return "Global Video Configuration";
+    if (props.singleMode === "ingredient") return "Video Configuration — Ingredient";
+    return "Video Configuration — Frame";
+  };
+
   return (
     <div class="config-section glass-panel">
       <div class="section-title">
         <span class="icon">🎬</span>
-        Video Configuration
+        {configTitle()}
+        <Show when={props.videoMode === "multi-scene"}>
+          <span style={{ "font-size": "0.68rem", color: "var(--text-muted)", "font-weight": "400", "margin-left": "8px" }}>
+            (berlaku untuk semua scene)
+          </span>
+        </Show>
       </div>
 
-      {/* Duration — Toggle buttons */}
-      <div class="config-group" style={{ "margin-bottom": "16px" }}>
-        <label class="config-label">Duration</label>
-        <div class="toggle-group">
-          {DURATIONS.map(d => (
-            <button
-              class={`toggle-btn ${props.duration === d.value ? "active" : ""}`}
-              onClick={() => props.onDurationChange(d.value)}
-            >
-              {d.label}
-            </button>
-          ))}
+      {/* Motion Intensity — Only in single mode */}
+      <Show when={props.videoMode === "single"}>
+        <div class="config-group" style={{ "margin-bottom": "16px" }}>
+          <label class="config-label">Motion Intensity</label>
+          <div class="toggle-group">
+            {MOTION_INTENSITIES.map(mi => (
+              <button
+                class={`toggle-btn ${props.motionIntensity === mi.value ? "active" : ""}`}
+                onClick={() => props.onMotionIntensityChange(mi.value)}
+              >
+                {mi.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </Show>
 
-      {/* Motion Intensity — Toggle buttons */}
-      <div class="config-group" style={{ "margin-bottom": "16px" }}>
-        <label class="config-label">Motion Intensity</label>
-        <div class="toggle-group">
-          {MOTION_INTENSITIES.map(mi => (
-            <button
-              class={`toggle-btn ${props.motionIntensity === mi.value ? "active" : ""}`}
-              onClick={() => props.onMotionIntensityChange(mi.value)}
-            >
-              {mi.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Aspect Ratio — Toggle buttons */}
+      {/* Aspect Ratio — Always shown */}
       <div class="config-group" style={{ "margin-bottom": "16px" }}>
         <label class="config-label">Aspect Ratio</label>
         <div class="toggle-group">
@@ -142,18 +137,21 @@ export default function VideoConfigOptions(props: VideoConfigOptionsProps) {
 
       {/* Remaining options in a grid */}
       <div class="config-grid">
-        <div class="config-group">
-          <label class="config-label">Camera Movement</label>
-          <select
-            class="config-select"
-            value={props.cameraMovement}
-            onChange={(e) => props.onCameraMovementChange(e.currentTarget.value)}
-          >
-            {CAMERA_MOVEMENTS.map(cm => (
-              <option value={cm.value}>{cm.label}</option>
-            ))}
-          </select>
-        </div>
+        {/* Camera Movement — Only in single mode */}
+        <Show when={props.videoMode === "single"}>
+          <div class="config-group">
+            <label class="config-label">Camera Movement</label>
+            <select
+              class="config-select"
+              value={props.cameraMovement}
+              onChange={(e) => props.onCameraMovementChange(e.currentTarget.value)}
+            >
+              {CAMERA_MOVEMENTS.map(cm => (
+                <option value={cm.value}>{cm.label}</option>
+              ))}
+            </select>
+          </div>
+        </Show>
 
         <div class="config-group">
           <label class="config-label">Video Style</label>

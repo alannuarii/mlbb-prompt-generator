@@ -14,6 +14,7 @@ interface NarrativeInputProps {
   suggestions?: ScenarioSuggestion[];
   suggestionsLoading?: boolean;
   canSuggest?: boolean;
+  useSceneImage?: boolean;
 }
 
 const PLACEHOLDERS = {
@@ -23,6 +24,10 @@ const PLACEHOLDERS = {
     "Describe your cinematic scene... e.g., 'Two warriors facing each other on a crumbling ancient bridge during a blood-red sunset, sparks flying from their clashing weapons, wind blowing their capes dramatically' atau 'Layla berdiri di puncak menara kristal, menatap lautan gelap dengan aura ungu menyelimutinya'",
   video:
     "Deskripsikan scene video... contoh: 'Kamera perlahan mendekati wajah hero saat angin menerbangkan rambut dan jubahnya, partikel cahaya berterbangan di sekitarnya, lalu hero membuka mata dengan tatapan tajam'",
+  scene_realistic:
+    "Jelaskan adegan dari gambar referensi — contoh: 'Hero berdiri di balkon apartemen menghadap kota malam hari, ekspresi tenang, angin meniup rambutnya' atau 'Hero sedang duduk di meja restoran mewah sambil tersenyum'",
+  scene_cinematic:
+    "Jelaskan adegan dari gambar referensi — contoh: 'Hero berdiri di tengah reruntuhan kastil kuno dengan pedang tertancap di tanah, cahaya bulan menyinari dari belakang' atau 'Hero terbang di atas awan badai dengan sayap terbentang'",
 };
 
 export default function NarrativeInput(props: NarrativeInputProps) {
@@ -43,16 +48,37 @@ export default function NarrativeInput(props: NarrativeInputProps) {
 
   const mode = () => props.promptMode || "realistic";
 
+  const currentPlaceholder = () => {
+    if (props.useSceneImage) {
+      return mode() === "realistic"
+        ? (PLACEHOLDERS as any).scene_realistic
+        : (PLACEHOLDERS as any).scene_cinematic;
+    }
+    return PLACEHOLDERS[mode()];
+  };
+
   return (
     <div class="narrative-section glass-panel">
       <div class="section-title">
         <span class="icon">📝</span>
-        Scenario / Narrative
+        {props.useSceneImage ? "Scene Description / Keterangan Adegan" : "Scenario / Narrative"}
+        <Show when={props.useSceneImage}>
+          <span style={{ "font-size": "0.7rem", color: "var(--accent-primary)", "font-weight": "400", "margin-left": "8px" }}>
+            🖼️ Mode Adegan
+          </span>
+        </Show>
       </div>
+
+      <Show when={props.useSceneImage}>
+        <div class="scene-mode-hint">
+          <span class="scene-hint-icon">💡</span>
+          <span>Jelaskan adegan/scene dari gambar referensi yang sudah di-upload. Prompt akan fokus menempatkan hero seolah-olah berada di adegan tersebut. Rekomendasi skenario tidak tersedia dalam mode ini.</span>
+        </div>
+      </Show>
 
       <textarea
         class="narrative-textarea"
-        placeholder={PLACEHOLDERS[mode()]}
+        placeholder={currentPlaceholder()}
         value={props.value}
         onInput={(e) => props.onChange(e.currentTarget.value)}
         onFocus={() => setFocused(true)}
