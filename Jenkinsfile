@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        APP_NAME = "mlbb-realistic-prompt"
+        APP_NAME = "mlbb-prompt-generator"
         IMAGE_NAME = "mlbb-prompt-generator"
         CONTAINER_PORT = "8000"
         HOST_PORT = "8000"
@@ -29,22 +29,29 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    echo "Deploying container..."
+                    echo "Deploying container using Jenkins Credentials..."
                     
                     // Stop and remove existing container if it exists
                     sh "docker stop ${APP_NAME} || true"
                     sh "docker rm ${APP_NAME} || true"
 
-                    // Run the new container
-                    // Note: --env-file .env is used if the .env exists in the workspace
-                    sh """
-                        docker run -d \\
-                        --name ${APP_NAME} \\
-                        --restart always \\
-                        -p ${HOST_PORT}:${CONTAINER_PORT} \\
-                        --env-file .env \\
-                        ${IMAGE_NAME}:latest
-                    """
+                    // Use credentials from Jenkins store
+                    withCredentials([
+                        string(credentialsId: 'GEMINI_API_KEY_FREE', variable: 'FREE_KEY'),
+                        string(credentialsId: 'GEMINI_API_KEY_PAID', variable: 'PAID_KEY')
+                    ]) {
+                        // Run the new container with injected environment variables
+                        sh """
+                            docker run -d \\
+                            --name ${APP_NAME} \\
+                            --restart always \\
+                            -p ${HOST_PORT}:${CONTAINER_PORT} \\
+                            -e GEMINI_API_KEY_FREE=${FREE_KEY} \\
+                            -e GEMINI_API_KEY_PAID=${PAID_KEY} \\
+                            -e NODE_ENV=production \\
+                            ${IMAGE_NAME}:latest
+                        """
+                    }
                 }
             }
         }
