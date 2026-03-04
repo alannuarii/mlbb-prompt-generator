@@ -2,7 +2,10 @@ import type { APIEvent } from "@solidjs/start/server";
 import { readdir, readFile } from "fs/promises";
 import { join, extname } from "path";
 
-const PORTRAIT_BASE = join(process.cwd(), "public", "portrait");
+const isProd = process.env.NODE_ENV === "production";
+const PORTRAIT_BASE = isProd 
+  ? join(process.cwd(), ".output", "public", "portrait")
+  : join(process.cwd(), "public", "portrait");
 const ALLOWED_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
 /**
