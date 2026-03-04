@@ -25,12 +25,13 @@ export default function DocsPage() {
           </div>
           <ul class="toc-list">
             <li><a href="#attribute-mode">1. Attribute Mode (Mode Atribut)</a></li>
-            <li><a href="#reference-mode">2. Reference Mode (Mode Referensi)</a></li>
-            <li><a href="#aspect-ratio">3. Aspect Ratio (Rasio Aspek)</a></li>
-            <li><a href="#quality">4. Quality (Kualitas)</a></li>
-            <li><a href="#mood">5. Mood / Atmosphere (Suasana)</a></li>
-            <li><a href="#lighting">6. Lighting Style (Gaya Pencahayaan)</a></li>
-            <li><a href="#camera">7. Camera Angle (Sudut Kamera)</a></li>
+            <li><a href="#scene-image">2. Scene Image (Gambar Adegan)</a></li>
+            <li><a href="#reference-mode">3. Reference Mode (Mode Referensi)</a></li>
+            <li><a href="#aspect-ratio">4. Aspect Ratio (Rasio Aspek)</a></li>
+            <li><a href="#quality">5. Quality (Kualitas)</a></li>
+            <li><a href="#mood">6. Mood / Atmosphere (Suasana)</a></li>
+            <li><a href="#lighting">7. Lighting Style (Gaya Pencahayaan)</a></li>
+            <li><a href="#camera">8. Camera Angle (Sudut Kamera)</a></li>
           </ul>
         </nav>
 
@@ -103,7 +104,74 @@ export default function DocsPage() {
           </div>
         </section>
 
-        {/* ====== SECTION 1: Reference Mode ====== */}
+        {/* ====== SECTION 1.5: Scene Image ====== */}
+        <section id="scene-image" class="docs-section glass-panel fade-in">
+          <div class="section-title">
+            <span class="icon">🖼️</span>
+            Scene Image (Gambar Adegan)
+          </div>
+
+          <p class="docs-intro">
+            Fitur ini memungkinkan Anda menambahkan <strong>gambar latar adegan</strong> sebagai konteks visual tambahan.
+            Daripada mendeskripsikan setting/latar lewat teks, Anda cukup upload gambar lokasi atau adegan,
+            dan AI akan menempatkan hero seolah-olah benar-benar berada di skenario tersebut.
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Opsi</th>
+                  <th>Nilai</th>
+                  <th>Penjelasan (ID)</th>
+                  <th>Kapan Digunakan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="option-badge accent">🚫 Tanpa Adegan</span></td>
+                  <td><code>false</code></td>
+                  <td>
+                    Tidak menggunakan gambar adegan. Setting/latar <strong>sepenuhnya dari teks narasi</strong>
+                    dan pilihan konfigurasi. Ini adalah mode default.
+                  </td>
+                  <td>
+                    Ketika Anda sudah bisa mendeskripsikan latar dengan baik lewat teks,
+                    atau tidak ingin scene terikat pada gambar tertentu.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">🖼️ Gunakan Gambar Adegan</span></td>
+                  <td><code>true</code></td>
+                  <td>
+                    Upload gambar adegan/scene sebagai referensi visual. AI akan menganalisis gambar tersebut
+                    dan menempatkan hero <em>seolah-olah berada dalam skenario di gambar itu</em> —
+                    mempertahankan pencahayaan, suasana, dan konteks visual dari gambar.
+                  </td>
+                  <td>
+                    Ketika Anda punya gambar lokasi spesifik (kota malam, hutan, arena pertarungan, dll)
+                    dan ingin hero ditempatkan tepat di skenario itu dengan akurasi visual tinggi.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="docs-tip">
+            <span class="tip-icon">💡</span>
+            <div>
+              <strong>Cara penggunaan:</strong> Aktifkan toggle "Gunakan Gambar Adegan", lalu drag-and-drop
+              atau klik area upload untuk memilih gambar. Gambar akan dianalisis bersama gambar referensi hero
+              saat generate prompt.
+              <br /><br />
+              <strong>Catatan penting:</strong> Saat Scene Image aktif, fitur "Rekomendasi Skenario" (✨ Suggest)
+              otomatis dinonaktifkan — karena AI perlu menyesuaikan skenario dengan gambar adegan
+              yang Anda pilih, bukan menghasilkan saran generik.
+            </div>
+          </div>
+        </section>
+
+        {/* ====== SECTION 2: Reference Mode ====== */}
         <section id="reference-mode" class="docs-section glass-panel fade-in">
           <div class="section-title">
             <span class="icon">📎</span>
@@ -509,6 +577,30 @@ export default function DocsPage() {
                   <td>Kamera dimiringkan untuk kesan gerakan dan aksi intens.</td>
                   <td>Dinamis, penuh aksi, tegang</td>
                 </tr>
+                <tr>
+                  <td><span class="option-badge">High Angle Dramatic</span></td>
+                  <td><code>high angle dramatic</code></td>
+                  <td>Kamera di posisi tinggi, melihat ke bawah pada karakter. Menciptakan kesan kerentanan atau kecilnya karakter terhadap lingkungannya.</td>
+                  <td>Dramatis, kesan tertekan, menunjukkan skala lingkungan</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Extreme Wide Establishing</span></td>
+                  <td><code>extreme wide establishing</code></td>
+                  <td>Shot sangat lebar untuk memperlihatkan karakter dalam keseluruhan lingkungannya. Karakter tampak kecil dibanding latar yang luas dan megah.</td>
+                  <td>Memperkenalkan lokasi, menunjukkan skala dunia, epik</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Bird's Eye Aerial</span></td>
+                  <td><code>bird eye aerial</code></td>
+                  <td>Tampilan tepat dari atas (90°) ke bawah. Memberikan perspektif unik seperti melihat dari udara atau map.</td>
+                  <td>Top-down perspective, unik, peta visual, sinematik drone</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Macro Detail Shot</span></td>
+                  <td><code>macro detail shot</code></td>
+                  <td>Pengambilan gambar sangat dekat untuk menampilkan detail ekstrem — seperti tekstur armor, ukiran senjata, atau detail wajah super close-up.</td>
+                  <td>Detail material, texture showcase, artistik</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -518,7 +610,8 @@ export default function DocsPage() {
             <div>
               <strong>Tip untuk Realistic:</strong> Gunakan <em>Close-Up Portrait</em> untuk memaksimalkan detail wajah
               dan memvalidasi face preservation. Gunakan <em>Medium Shot</em> jika menggunakan Custom Outfit
-              agar pakaian baru terlihat jelas.
+              agar pakaian baru terlihat jelas. Gunakan <em>Extreme Wide Establishing</em> atau
+              <em>Bird's Eye Aerial</em> jika ingin menunjukkan karakter dalam konteks lingkungan yang luas.
             </div>
           </div>
         </section>

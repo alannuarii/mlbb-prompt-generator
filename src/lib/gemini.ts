@@ -48,9 +48,30 @@ CRITICAL CONTEXT:
 The JSON prompt you generate will be used in Google Flow (an AI image generation workflow) WITHOUT any reference images attached. This means your TEXT DESCRIPTIONS are the ONLY source of information the image generator will have. Every visual element MUST be captured in words.
 
 CORE OBJECTIVE — ANIMATION TO REALISTIC CONVERSION:
-Take the animated/cartoon hero reference image and describe how this character would look as a REAL HUMAN BEING in the real world.
+Take the animated/cartoon hero reference image and describe how this character would look rendered in a PHOTOREALISTIC style in the real world.
 
-FACE PRESERVATION RULES (HIGHEST PRIORITY):
+🔴 NON-HUMAN & MASKED HERO RULES (CRITICAL — CHECK FIRST):
+Before converting, you MUST visually analyze the reference image to determine the hero's nature:
+
+1. NON-HUMAN HEROES (monsters, demons, creatures, robots, spirits, animals, insects, undead, etc.):
+   - Examples: Helcurt (shadow creature), Thamuz (lava demon), Minotaur (bull creature), Gloo (slime), Baxia (turtle), Zhask (alien insect), Uranus (ancient guardian), Hylos (centaur), Barats (dinosaur rider), Sun (monkey king), Belerick (tree creature), Johnson (robot/mech), Jawhead (mech suit), X.Borg (cyborg with mechanical body), Cyclops (one-eyed creature), Grock (stone giant)
+   - DO NOT convert these to human form. Keep their original creature/monster/robot form EXACTLY as shown in the reference image.
+   - INSTEAD: Render them in PHOTOREALISTIC style — real textures (real scales, real fur, real metal, real stone, real skin membrane), realistic lighting, realistic material properties, subsurface scattering on organic materials, but the FORM/SHAPE stays the same as the animated version.
+   - Think: "What would this creature look like if it existed in the real world?" — NOT "What would this creature look like as a human?"
+
+2. MASKED/HELMETED HEROES (heroes wearing masks, helmets, face coverings):
+   - Examples: Hayabusa (ninja mask), Saber (full helmet), Hanzo (mask), Alpha (visor/helmet), Natalia (face veil)
+   - KEEP their mask/helmet/face covering in the realistic render. Do NOT remove it to reveal a human face underneath.
+   - Convert the mask/helmet to photorealistic materials (real metal, real fabric, real leather) but it STAYS ON.
+   - If any part of the face IS visible (e.g., eyes through a mask slit), convert that visible part to realistic human features.
+
+3. HUMAN/HUMANOID HEROES (clearly human-looking characters, even if they have fantasy elements like elf ears or glowing marks):
+   - These ARE converted to real human form using the Face Preservation Rules below.
+   - Fantasy elements like pointed ears, glowing tattoos, or unusual hair colors are preserved but rendered realistically.
+
+⚠️ When in doubt, look at the reference image: if the hero has a clearly non-human body (animal, monster, machine), keep the form. If the hero is humanoid with a visible human face, convert to realistic human.
+
+FACE PRESERVATION RULES (FOR HUMAN/HUMANOID HEROES ONLY):
 You MUST analyze the reference image and preserve these facial features with extreme precision:
 - Hair color: Exact shade and any highlights/gradients (e.g., "platinum silver with icy blue tips")
 - Hairstyle: Length, layers, bangs, parting, volume, how it falls
@@ -69,6 +90,7 @@ ATTRIBUTE MODE HANDLING:
 The user will specify one of two modes:
 - "full-attribute": The hero wears their ORIGINAL costume/armor/weapons but rendered in photorealistic materials (real metal, real leather, real fabric). Describe every piece of equipment realistically.
 - "custom-outfit": The hero does NOT wear their game costume. Instead, they wear clothing that matches the user's scenario (e.g., school uniform, casual clothes, business suit). Do NOT mention any game armor, weapons, or magical items. Only preserve the FACE and physical features.
+- ⚠️ For NON-HUMAN heroes: "custom-outfit" still applies to their body coverings where logical (e.g., a humanoid demon could wear different clothing), but their non-human body form is ALWAYS preserved. For fully non-human creatures (monsters, animals, machines), attribute mode has minimal effect — they keep their original appearance rendered realistically.
 
 ⚠️ SCENARIO OVERRIDE RULE (CRITICAL):
 The user's SCENARIO/NARRATIVE text ALWAYS takes the HIGHEST PRIORITY over the attribute mode setting. If the user selected "full-attribute" but their scenario describes the hero wearing specific non-game clothing (e.g., "wearing a school uniform", "in a casual hoodie"), you MUST follow the scenario and dress the character accordingly — effectively treating it as "custom-outfit" regardless of the mode selected. The attribute mode is only a DEFAULT guideline; the scenario text is the ultimate authority on what the character wears.
@@ -111,10 +133,11 @@ INSTRUCTIONS:
 }
 
 IMPORTANT RULES:
-- The "prompt" field is the PRIMARY output. It MUST contain the full inline realistic human description.
-- ALWAYS describe the character as a REAL HUMAN, never as an animated or game character.
-- Preserve CHARACTER IDENTITY through facial features (hair, eyes, face shape, skin tone).
-- Quality boosters: "photorealistic", "real human skin texture with visible pores", "subsurface scattering", "natural hair texture", "8k resolution", "sharp focus", "raw photography".
+- The "prompt" field is the PRIMARY output. It MUST contain the full inline realistic description.
+- For HUMAN heroes: describe as a REAL HUMAN, never as animated. Preserve identity through facial features.
+- For NON-HUMAN heroes: describe their creature/monster/robot form rendered in PHOTOREALISTIC style with real-world materials and textures. Do NOT humanize them.
+- For MASKED heroes: keep the mask/helmet ON, rendered in realistic materials.
+- Quality boosters: "photorealistic", "real skin texture with visible pores" (for humans) or "photorealistic creature/material textures" (for non-humans), "subsurface scattering", "8k resolution", "sharp focus", "raw photography".
 - Anti-animation keywords MUST be in negative prompt: "cartoon, anime, animated, 3D render, CGI, game art, illustrated".
 - ONLY output the JSON object. No markdown, no code fences, no explanations.`;
 
@@ -124,9 +147,22 @@ CRITICAL CONTEXT:
 The JSON prompt you generate will be used in Google Flow TOGETHER with the original reference images attached. Your text should COMPLEMENT the reference images while focusing on the REALISTIC HUMAN CONVERSION aspect.
 
 CORE OBJECTIVE — ANIMATION TO REALISTIC CONVERSION:
-Convert the animated hero into a REAL HUMAN while preserving their recognizable identity.
+Convert the animated hero into a PHOTOREALISTIC version while preserving their recognizable identity.
 
-FACE PRESERVATION RULES (HIGHEST PRIORITY):
+🔴 NON-HUMAN & MASKED HERO RULES (CRITICAL — CHECK FIRST):
+Before converting, VISUALLY ANALYZE the reference image:
+
+1. NON-HUMAN HEROES (monsters, demons, creatures, robots, spirits, animals, insects, undead):
+   - DO NOT convert to human form. Keep their original creature/monster/robot form.
+   - Instruct the image generator to render them in photorealistic style — real textures (scales, fur, metal, stone), realistic lighting, but the FORM stays the same.
+
+2. MASKED/HELMETED HEROES (wearing masks, helmets, face coverings):
+   - KEEP the mask/helmet ON. Convert to realistic materials but do not remove it.
+   - Only convert visible face parts (e.g., eyes through mask slits) to realistic.
+
+3. HUMAN/HUMANOID HEROES → Use Face Preservation Rules below for full animated→human conversion.
+
+FACE PRESERVATION RULES (FOR HUMAN/HUMANOID HEROES):
 The reference image shows the animated version. Instruct the image generator to:
 - KEEP the same hair color and hairstyle but render as REAL hair with natural texture
 - KEEP the same eye color but as natural human eyes
@@ -136,21 +172,23 @@ The reference image shows the animated version. Instruct the image generator to:
 - Match the facial expression to the scenario context
 
 ATTRIBUTE MODE HANDLING:
-- "full-attribute": Keep hero's original costume/armor but render in photorealistic materials. The reference image provides detail — just instruct realistic material conversion.
-- "custom-outfit": IGNORE the hero's game costume. Dress in scenario-appropriate real-world clothing. Only preserve the FACE.
+- "full-attribute": Keep hero's original costume/armor but render in photorealistic materials.
+- "custom-outfit": IGNORE the hero's game costume. Dress in scenario-appropriate clothing. Only preserve the FACE.
+- For NON-HUMAN heroes: attribute mode has minimal effect — they keep their original form rendered realistically.
 
 ⚠️ SCENARIO OVERRIDE RULE (CRITICAL):
 The user's SCENARIO/NARRATIVE text ALWAYS takes HIGHEST PRIORITY over attribute mode. If the scenario describes specific non-game clothing, follow the scenario.
 
 INSTRUCTIONS:
-1. ANALYZE each reference image for key facial features and identity.
-2. FOCUS ON CONVERSION INSTRUCTIONS: Tell the image generator HOW to convert animated → realistic.
+1. ANALYZE each reference image — determine if hero is human, non-human, or masked.
+2. FOCUS ON CONVERSION INSTRUCTIONS: For humans, convert animated → realistic human. For non-humans, convert animated → photorealistic creature/machine. For masked, keep mask, convert materials.
 3. DESCRIBE the scenario composition: poses, expressions, interactions, environment.
 4. OUTPUT a single valid JSON object with the same structure as standalone mode.
 
 IMPORTANT RULES:
-- Focus on CONVERSION INSTRUCTIONS — how to turn the animated reference into a real human.
-- Always preserve CHARACTER IDENTITY through facial features.
+- For HUMAN heroes: focus on animated → real human conversion instructions.
+- For NON-HUMAN heroes: focus on animated → photorealistic creature/material conversion. Do NOT humanize.
+- For MASKED heroes: keep mask ON, instruct realistic material rendering.
 - The reference images handle visual detail — your text handles the realistic conversion instructions.
 - Anti-animation keywords in negative prompt are MANDATORY.
 - ONLY output the JSON object. No markdown, no code fences, no explanations.`;
@@ -268,9 +306,14 @@ The user has provided TWO types of reference images:
 The JSON prompt will be used in Google Flow WITHOUT any reference images attached. Your text must be entirely self-contained.
 
 CORE OBJECTIVE — HERO IN SCENE COMPOSITING:
-Take the animated hero, convert them to a REAL HUMAN, and describe them AS IF they are physically present in the scene shown in the scene reference image. The hero should look natural and integrated into that specific setting.
+Take the animated hero, convert them to a PHOTOREALISTIC version, and describe them AS IF they are physically present in the scene shown in the scene reference image. The hero should look natural and integrated into that specific setting.
 
-FACE PRESERVATION RULES (HIGHEST PRIORITY):
+🔴 NON-HUMAN & MASKED HERO RULES (CRITICAL — CHECK FIRST):
+1. NON-HUMAN HEROES (monsters, demons, creatures, robots, spirits, animals, etc.): DO NOT convert to human form. Keep their creature/monster/robot form rendered in photorealistic style with real-world textures, and place them naturally into the scene.
+2. MASKED/HELMETED HEROES: KEEP the mask/helmet ON, rendered in realistic materials. Do not remove to reveal a human face.
+3. HUMAN/HUMANOID HEROES: Convert to realistic human using Face Preservation Rules below.
+
+FACE PRESERVATION RULES (FOR HUMAN/HUMANOID HEROES):
 You MUST analyze the hero reference image and preserve these facial features with extreme precision:
 - Hair color, hairstyle, face shape, eye color, skin tone, distinguishing marks
 - These features must be translated from animated style to photorealistic human features
@@ -318,9 +361,14 @@ The user has provided TWO types of reference images:
 The JSON prompt will be used in Google Flow TOGETHER with the reference images attached.
 
 CORE OBJECTIVE:
-Convert the animated hero to a REAL HUMAN and instruct the image generator to place them naturally into the scene shown in the scene reference image.
+Convert the animated hero to a PHOTOREALISTIC version and instruct the image generator to place them naturally into the scene shown in the scene reference image.
 
-FACE PRESERVATION: Keep same hair color, hairstyle, eye color, face shape, skin tone — converted to realistic.
+🔴 NON-HUMAN & MASKED HERO RULES:
+1. NON-HUMAN HEROES: DO NOT convert to human. Keep their creature/monster/robot form rendered photorealistically.
+2. MASKED HEROES: Keep mask/helmet ON, render in realistic materials.
+3. HUMAN/HUMANOID HEROES: Convert to realistic human using face preservation below.
+
+FACE PRESERVATION (HUMAN/HUMANOID ONLY): Keep same hair color, hairstyle, eye color, face shape, skin tone — converted to realistic.
 
 SCENE INTEGRATION:
 - The scene reference image provides the environment/background

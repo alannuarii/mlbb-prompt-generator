@@ -24,15 +24,241 @@ export default function VideoDocsPage() {
             Daftar Isi
           </div>
           <ul class="toc-list">
-            <li><a href="#duration">1. Duration (Durasi Video)</a></li>
-            <li><a href="#motion-intensity">2. Motion Intensity (Intensitas Gerakan)</a></li>
-            <li><a href="#camera-movement">3. Camera Movement (Gerakan Kamera)</a></li>
-            <li><a href="#video-style">4. Video Style (Gaya Video)</a></li>
-            <li><a href="#mood">5. Mood / Atmosphere (Suasana)</a></li>
-            <li><a href="#sound-design">6. Sound Design (Desain Suara)</a></li>
-            <li><a href="#aspect-ratio">7. Aspect Ratio (Rasio Aspek)</a></li>
+            <li><a href="#video-mode">1. Video Mode (Single vs Multi-Scene)</a></li>
+            <li><a href="#single-mode">2. Single Mode: Frame vs Ingredient</a></li>
+            <li><a href="#multi-scene">3. Multi-Scene: Overall Story &amp; Scene Cards</a></li>
+            <li><a href="#duration">4. Duration (Durasi Video)</a></li>
+            <li><a href="#motion-intensity">5. Motion Intensity (Intensitas Gerakan)</a></li>
+            <li><a href="#camera-movement">6. Camera Movement (Gerakan Kamera)</a></li>
+            <li><a href="#transition">7. Transition (Transisi Antar Scene)</a></li>
+            <li><a href="#video-style">8. Video Style (Gaya Video)</a></li>
+            <li><a href="#mood">9. Mood / Atmosphere (Suasana)</a></li>
+            <li><a href="#sound-design">10. Sound Design (Desain Suara)</a></li>
+            <li><a href="#aspect-ratio">11. Aspect Ratio (Rasio Aspek)</a></li>
           </ul>
         </nav>
+
+        {/* ====== SECTION 0: Video Mode ====== */}
+        <section id="video-mode" class="docs-section glass-panel fade-in fade-in-delay-2">
+          <div class="section-title">
+            <span class="icon">🎬</span>
+            Video Mode (Mode Video)
+          </div>
+
+          <p class="docs-intro">
+            Halaman Video menyediakan dua mode utama yang menentukan <strong>bagaimana prompt video akan dibuat</strong>.
+            Pilih mode sesuai tujuan Anda: satu klip tunggal atau serangkaian scene yang saling terhubung.
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Mode</th>
+                  <th>Tab</th>
+                  <th>Penjelasan (ID)</th>
+                  <th>Kapan Digunakan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="option-badge accent">🎥 Single Video</span></td>
+                  <td><code>single</code></td>
+                  <td>
+                    Menghasilkan <strong>satu prompt video tunggal</strong>. Cocok untuk satu klip
+                    sinematik yang berdiri sendiri. Tersedia dua sub-mode: <em>Frame</em> (animasi gambar)
+                    dan <em>Ingredient</em> (referensi visual).
+                  </td>
+                  <td>
+                    Ketika Anda ingin satu video klip pendek: portrait hidup, hero showcase,
+                    atau scene dramatik tunggal.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">🎞️ Multi-Scene (Extend)</span></td>
+                  <td><code>multi-scene</code></td>
+                  <td>
+                    Menghasilkan <strong>prompt untuk beberapa scene</strong> yang terhubung secara berurutan
+                    — mirip workflow Google Flow Extend. Scene 1 dibuat dari gambar (Image-to-Video),
+                    scene berikutnya menggunakan Extend dari scene sebelumnya.
+                    Tersedia 2–8 scene.
+                  </td>
+                  <td>
+                    Ketika Anda ingin rangkaian video berkelanjutan dengan alur cerita:
+                    opening → aksi → closing. Cocok untuk mini clip atau konten storytelling.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="docs-tip">
+            <span class="tip-icon">💡</span>
+            <div>
+              <strong>Validasi:</strong> Single mode membutuhkan minimal 1 narasi scene.
+              Multi-Scene membutuhkan minimal 2 scene dengan narasi.
+              Kedua mode memerlukan setidaknya 1 hero dengan gambar yang di-upload.
+            </div>
+          </div>
+        </section>
+
+        {/* ====== SECTION 0.5: Single Mode ====== */}
+        <section id="single-mode" class="docs-section glass-panel fade-in">
+          <div class="section-title">
+            <span class="icon">🖼️</span>
+            Single Mode: Frame vs Ingredient
+          </div>
+
+          <p class="docs-intro">
+            Dalam mode <strong>Single Video</strong>, tersedia dua sub-mode yang menentukan
+            <em>bagaimana gambar hero digunakan</em> oleh AI untuk membuat prompt video.
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Sub-Mode</th>
+                  <th>Tab</th>
+                  <th>Penjelasan (ID)</th>
+                  <th>Cara Kerja</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="option-badge accent">🖼️ Frame</span></td>
+                  <td><code>frame</code></td>
+                  <td>
+                    Gambar yang di-upload akan dijadikan <strong>frame pertama video</strong>.
+                    AI membuat prompt untuk "menghidupkan" gambar tersebut — karakter dan komposisi
+                    tetap persis seperti gambar, hanya dibuat bergerak.
+                  </td>
+                  <td>
+                    Upload gambar hasil generate yang sudah jadi &rarr; AI menganalisis gambar tersebut
+                    &rarr; Menghasilkan prompt yang menginstruksikan Google Flow untuk menggerakkan
+                    gambar itu menjadi video (Image-to-Video).
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">🧩 Ingredient</span></td>
+                  <td><code>ingredient</code></td>
+                  <td>
+                    Gambar hero digunakan sebagai <strong>referensi visual (ingredient)</strong>.
+                    Video dibuat dari nol dengan karakter yang sama, tapi pose, sudut kamera,
+                    dan komposisi bebas ditentukan AI sesuai narasi.
+                  </td>
+                  <td>
+                    Upload gambar hero (bisa gambar game/basic) &rarr; AI menganalisis karakter
+                    (wajah, warna rambut, pakaian) &rarr; Menghasilkan prompt yang mendeskripsikan
+                    hero dalam adegan baru yang sepenuhnya kreasi AI.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="docs-tip">
+            <span class="tip-icon">💡</span>
+            <div>
+              <strong>Kapan pakai Frame:</strong> Sudah punya gambar hasil generate yang bagus dan ingin dijadikan video.
+              <br /><br />
+              <strong>Kapan pakai Ingredient:</strong> Ingin video dengan pose/komposisi berbeda dari gambar referensi,
+              atau gambar yang Anda miliki hanya gambar hero dasar (bukan hasil generate yang sudah realistic/cinematic).
+            </div>
+          </div>
+        </section>
+
+        {/* ====== SECTION 0.75: Multi-Scene ====== */}
+        <section id="multi-scene" class="docs-section glass-panel fade-in">
+          <div class="section-title">
+            <span class="icon">🎞️</span>
+            Multi-Scene: Overall Story &amp; Scene Cards
+          </div>
+
+          <p class="docs-intro">
+            Mode <strong>Multi-Scene</strong> memiliki antarmuka khusus yang terdiri dari dua bagian utama:
+            <em>Overall Story</em> (ringkasan cerita) dan <em>Scene Cards</em> (kartu per-scene).
+            Setiap scene memiliki konfigurasi gerakan kamera, intensitas, dan transisi tersendiri.
+          </p>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Komponen</th>
+                  <th>Penjelasan</th>
+                  <th>Cara Penggunaan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="option-badge accent">📝 Overall Story</span></td>
+                  <td>
+                    Textarea untuk menuliskan <strong>ringkasan alur cerita keseluruhan</strong>
+                    dari semua scene. Digunakan sebagai konteks global untuk AI saat generate narasi
+                    per-scene agar tetap konsisten.
+                  </td>
+                  <td>
+                    Tulis deskripsi singkat alur video (misal: "Layla berjalan dari kegelapan menuju cahaya").
+                    Klik ✨ <strong>Rekomendasi Full Story</strong> untuk auto-generate overall story
+                    + narasi semua scene sekaligus dalam satu panggilan AI.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">🎞️ Scene Cards</span></td>
+                  <td>
+                    Setiap scene ditampilkan sebagai card terpisah. Setiap card berisi:
+                    textarea narasi scene, konfigurasi kamera, intensitas gerakan, dan transisi.
+                    Tersedia <strong>2–8 scene</strong>. Scene dapat ditambah atau dihapus.
+                  </td>
+                  <td>
+                    Isi narasi per-scene secara manual, atau klik ✨ di setiap scene untuk
+                    <strong>cascade suggest</strong> — AI akan generate narasi scene tersebut
+                    beserta scene-scene setelahnya secara berurutan, menjaga konsistensi cerita.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">✨ Rekomendasi Full Story</span></td>
+                  <td>
+                    Tombol untuk generate <strong>keseluruhan struktur cerita sekaligus</strong> —
+                    overall story + narasi + kamera + intensitas + transisi untuk semua scene
+                    dalam satu panggilan API.
+                  </td>
+                  <td>
+                    Tersedia di bagian Overall Story. Membutuhkan setidaknya 1 hero dengan gambar.
+                    Sangat berguna sebagai starting point sebelum melakukan penyesuaian manual.
+                  </td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">✨ Per-Scene Suggest (Cascade)</span></td>
+                  <td>
+                    Klik tombol ✨ di scene manapun untuk <strong>generate ulang scene tersebut
+                    dan semua scene setelahnya</strong> (cascade). Scene sebelumnya dikunci
+                    dan tidak diubah.
+                  </td>
+                  <td>
+                    Membutuhkan Overall Story yang sudah diisi. Scene yang "dikunci" tidak
+                    berubah — hanya scene yang diklik dan scene sesudahnya yang di-regenerate.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="docs-tip">
+            <span class="tip-icon">💡</span>
+            <div>
+              <strong>Workflow yang direkomendasikan:</strong>
+              <br />1. Upload gambar hero &rarr; 2. Isi jumlah scene yang diinginkan &rarr; 3. Klik
+              <strong>Rekomendasi Full Story</strong> untuk auto-generate &rarr; 4. Review dan edit
+              narasi/konfigurasi per-scene jika perlu &rarr; 5. Klik Generate Multi-Scene Prompt.
+              <br /><br />
+              <strong>Catatan Scene 1:</strong> Scene 1 selalu merupakan Image-to-Video (dari gambar yang di-upload).
+              Scene 2 dan seterusnya menggunakan Extend dari scene sebelumnya — mirip workflow
+              Google Flow Extend untuk menjaga kontinuitas visual.
+            </div>
+          </div>
+        </section>
 
         {/* ====== SECTION 1: Duration ====== */}
         <section id="duration" class="docs-section glass-panel fade-in fade-in-delay-2">
@@ -114,6 +340,15 @@ export default function VideoDocsPage() {
             Motion intensity memengaruhi semua aspek: gerakan karakter, efek lingkungan, dan perubahan atmosfer.
           </p>
 
+          <div class="docs-tip" style={{ "margin-bottom": "16px" }}>
+            <span class="tip-icon">ℹ️</span>
+            <div>
+              <strong>Single Mode Only:</strong> Motion Intensity hanya tersedia di <em>Single Video mode</em>.
+              Di Multi-Scene, setiap scene card memiliki pengaturan intensitas gerakan sendiri
+              yang bisa diatur secara independen per-scene.
+            </div>
+          </div>
+
           <img src="/docs/motion-intensity.png" alt="Perbandingan intensitas gerakan" class="docs-image" loading="lazy" />
 
           <div class="docs-table-wrapper">
@@ -192,6 +427,16 @@ export default function VideoDocsPage() {
             Pemilihan yang tepat dapat membuat video terasa seperti cuplikan film profesional.
             Kamera yang bergerak halus menambah kedalaman dan kehidupan pada scene.
           </p>
+
+          <div class="docs-tip" style={{ "margin-bottom": "16px" }}>
+            <span class="tip-icon">ℹ️</span>
+            <div>
+              <strong>Single Mode Only:</strong> Camera Movement global hanya tersedia di <em>Single Video mode</em>.
+              Di Multi-Scene, setiap scene card memiliki pilihan kamera sendiri — lihat seksi
+              <a href="#multi-scene">Multi-Scene</a> dan tabel kamera di bawah yang juga berlaku
+              untuk pilihan per-scene.
+            </div>
+          </div>
 
           <img src="/docs/camera-movements.png" alt="Jenis-jenis gerakan kamera" class="docs-image" loading="lazy" />
 
@@ -288,6 +533,88 @@ export default function VideoDocsPage() {
               <strong>Rekomendasi:</strong> <em>Slow Push In</em> adalah gerakan kamera paling versatile —
               berfungsi baik untuk hampir semua jenis scene. <em>Orbit</em> sangat bagus untuk
               hero showcase, dan <em>Parallax Depth</em> menambahkan wow factor tanpa gerakan kamera yang besar.
+            </div>
+          </div>
+        </section>
+
+        {/* ====== SECTION 3.5: Transition ====== */}
+        <section id="transition" class="docs-section glass-panel fade-in">
+          <div class="section-title">
+            <span class="icon">🔗</span>
+            Transition (Transisi Antar Scene)
+          </div>
+
+          <p class="docs-intro">
+            Transisi menentukan <strong>bagaimana satu scene berpindah ke scene berikutnya</strong>
+            di Multi-Scene mode. Setiap scene card (kecuali scene terakhir) memiliki pilihan transisi
+            yang bisa diatur secara independen.
+          </p>
+
+          <div class="docs-tip" style={{ "margin-bottom": "16px" }}>
+            <span class="tip-icon">ℹ️</span>
+            <div>
+              <strong>Multi-Scene Only:</strong> Transisi hanya muncul di mode Multi-Scene,
+              pada setiap scene card kecuali scene terakhir (karena tidak ada scene berikutnya).
+            </div>
+          </div>
+
+          <div class="docs-table-wrapper">
+            <table class="docs-table">
+              <thead>
+                <tr>
+                  <th>Opsi</th>
+                  <th>Nilai (EN)</th>
+                  <th>Penjelasan (ID)</th>
+                  <th>Kesan yang Dihasilkan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="option-badge accent">Crossfade</span></td>
+                  <td><code>smooth crossfade</code></td>
+                  <td>Transisi mulus — scene satu memudar secara bertahap sambil scene berikutnya muncul. Paling natural dan sinematik.</td>
+                  <td>Halus, mengalir, continuity terjaga</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Hard Cut</span></td>
+                  <td><code>hard cut</code></td>
+                  <td>Perpindahan langsung tanpa transisi gradual. Abrupt dan tegas — seperti cut dalam editing film.</td>
+                  <td>Tegas, dinamis, kontras scene lebih terasa</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Whip Pan</span></td>
+                  <td><code>whip pan</code></td>
+                  <td>Kamera "melempar" ke arah baru dengan cepat, menciptakan motion blur dramatik saat transisi.</td>
+                  <td>Energetik, cepat, gaya action/music video</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Fade to Black</span></td>
+                  <td><code>fade to black</code></td>
+                  <td>Scene memudar ke hitam, lalu scene berikutnya fade-in dari hitam. Memberikan jeda emosional.</td>
+                  <td>Dramatis, melankolis, pergantian waktu/lokasi</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Match Cut</span></td>
+                  <td><code>match cut</code></td>
+                  <td>Transisi dengan mencocokkan elemen visual (bentuk, gerakan, atau posisi) antara akhir satu scene dan awal scene berikutnya. Teknik sinematografi advanced.</td>
+                  <td>Artistik, elegan, koneksi visual yang kuat</td>
+                </tr>
+                <tr>
+                  <td><span class="option-badge">Zoom Transition</span></td>
+                  <td><code>zoom transition</code></td>
+                  <td>Transisi menggunakan efek zoom — scene saat ini zoom-in atau zoom-out ke scene berikutnya.</td>
+                  <td>Dinamis, modern, gaya vlog/konten digital</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="docs-tip">
+            <span class="tip-icon">💡</span>
+            <div>
+              <strong>Rekomendasi:</strong> <em>Smooth Crossfade</em> (default) bekerja baik untuk hampir semua
+              kombinasi scene dan menjaga kontinuitas visual. Gunakan <em>Hard Cut</em> jika antar-scene sangat
+              berbeda suasana/lokasi. Gunakan <em>Match Cut</em> untuk transisi yang artistik.
             </div>
           </div>
         </section>
