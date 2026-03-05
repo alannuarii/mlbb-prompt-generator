@@ -129,7 +129,7 @@ export async function suggestScenarios(params: SuggestParams): Promise<{ title: 
 
   // ── Context Caching: cache system instruction + gambar hero ──
   // Cache key unik per mode + kombinasi hero
-  const cacheKey = buildCacheKey(`suggest::${params.mode}`, heroNames);
+  const cacheKey = buildCacheKey(`suggest::${params.mode}`, heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai,
     model: MODEL_NAME,
@@ -380,7 +380,7 @@ export async function suggestMultiSceneStory(
     imageLabels.push(`[Reference image for ${hero.heroName}]`);
   }
 
-  const cacheKey = buildCacheKey(`suggest::multi-scene`, heroNames);
+  const cacheKey = buildCacheKey(`suggest::multi-scene`, heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai, model: MODEL_NAME, cacheKey,
     systemInstruction: SUGGEST_MULTI_SCENE_STORY,
@@ -479,7 +479,7 @@ export async function suggestSceneNarrative(
     imageLabels.push(`[Reference image for ${hero.heroName}]`);
   }
 
-  const cacheKey = buildCacheKey(`suggest::scene-single`, heroNames);
+  const cacheKey = buildCacheKey(`suggest::scene-single`, heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai, model: MODEL_NAME, cacheKey,
     systemInstruction: SUGGEST_SINGLE_SCENE_NARRATIVE,
@@ -654,7 +654,7 @@ export async function suggestCascadeScenes(
     imageLabels.push(`[Reference image for ${hero.heroName}]`);
   }
 
-  const cacheKey = buildCacheKey(`suggest::cascade`, heroNames);
+  const cacheKey = buildCacheKey(`suggest::cascade`, heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai, model: MODEL_NAME, cacheKey,
     systemInstruction: SUGGEST_CASCADE_SCENES,

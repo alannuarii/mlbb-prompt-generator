@@ -511,7 +511,7 @@ export async function generatePrompt(params: GeneratePromptParams): Promise<stri
 
   // ── Context Caching: cache system instruction + gambar hero ──
   const sceneKey = hasSceneImage ? '::scene' : '';
-  const cacheKey = buildCacheKey(`gemini::${params.promptMode}::${params.referenceMode}${sceneKey}`, heroNames);
+  const cacheKey = buildCacheKey(`gemini::${params.promptMode}::${params.referenceMode}${sceneKey}`, heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai,
     model: MODEL_NAME,

@@ -14,14 +14,14 @@ export interface GeminiModel {
 
 export const GEMINI_MODELS: GeminiModel[] = [
   // Flagship
-  { value: "gemini-3-flash",       label: "Gemini 3 Flash",      badge: "🔥 Newest",   tier: "flagship", desc: "Model terbaru, performa terbaik" },
-  { value: "gemini-2.5-pro",       label: "Gemini 2.5 Pro",      badge: "🧠 Powerful", tier: "flagship", desc: "Paling cerdas, reasoning kompleks" },
+  { value: "gemini-3-flash-preview",        label: "Gemini 3 Flash",       badge: "🔥 Newest",   tier: "flagship", desc: "Model terbaru, performa terbaik" },
+  { value: "gemini-2.5-pro",                label: "Gemini 2.5 Pro",       badge: "🧠 Powerful", tier: "flagship", desc: "Paling cerdas, reasoning kompleks" },
   // Standard
-  { value: "gemini-2.5-flash",     label: "Gemini 2.5 Flash",    badge: "⚡ Balanced", tier: "standard", desc: "Keseimbangan kecepatan & kualitas" },
-  { value: "gemini-2.0-flash",     label: "Gemini 2.0 Flash",    badge: "🚀 Fast",     tier: "standard", desc: "Cepat, stabil, teruji" },
+  { value: "gemini-2.5-flash",              label: "Gemini 2.5 Flash",     badge: "⚡ Balanced", tier: "standard", desc: "Keseimbangan kecepatan & kualitas" },
+  { value: "gemini-2.0-flash",              label: "Gemini 2.0 Flash",     badge: "🚀 Fast",     tier: "standard", desc: "Cepat, stabil, teruji" },
   // Lite
-  { value: "gemini-3.1-flash-lite",label: "Gemini 3.1 Flash Lite",badge: "🪶 Lite",    tier: "lite",     desc: "Ringan, hemat token" },
-  { value: "gemini-2.5-flash-lite",label: "Gemini 2.5 Flash Lite",badge: "🪶 Lite",    tier: "lite",     desc: "Ringan, hemat token" },
+  { value: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite", badge: "🪶 Lite",   tier: "lite",     desc: "Ringan, hemat token" },
+  { value: "gemini-2.5-flash-lite",         label: "Gemini 2.5 Flash Lite", badge: "🪶 Lite",   tier: "lite",     desc: "Ringan, hemat token" },
 ];
 
 const DEFAULT_MODEL = "gemini-2.5-flash";

@@ -23,13 +23,17 @@ const CACHE_SKIP_SENTINEL = "__SKIP__";
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Membuat cache key unik berdasarkan prefix dan hero names (opsional).
- * Jika heroNames disediakan, key akan unik per kombinasi hero.
+ * Membuat cache key unik berdasarkan prefix, model, dan hero names (opsional).
+ * Key unik per kombinasi model + hero agar tidak terjadi cache mismatch saat switch model.
  */
-export function buildCacheKey(prefix: string, heroNames?: string[]): string {
-  if (!heroNames || heroNames.length === 0) return prefix;
-  const sorted = [...heroNames].sort().join("|");
-  return `${prefix}::${sorted}`;
+export function buildCacheKey(prefix: string, heroNames?: string[], model?: string): string {
+  let key = prefix;
+  if (model) key += `::model=${model}`;
+  if (heroNames && heroNames.length > 0) {
+    const sorted = [...heroNames].sort().join("|");
+    key += `::${sorted}`;
+  }
+  return key;
 }
 
 /**
@@ -149,6 +153,18 @@ async function createGeminiCache(params: {
       msg.includes("FreeTier")
     ) {
       console.warn(`[Gemini Cache] Caching not available (quota/free-tier limit) — using non-cached mode.`);
+      return null;
+    }
+    // Handle model not found or not supported for createCachedContent
+    // (e.g. gemini-3.1-flash-lite is valid for generation but doesn't support caching)
+    if (
+      msg.includes("NOT_FOUND") ||
+      msg.includes("404") ||
+      msg.includes("not found") ||
+      msg.includes("not supported for createCachedContent") ||
+      msg.includes("is not supported")
+    ) {
+      console.warn(`[Gemini Cache] Model does not support caching — using non-cached mode.`);
       return null;
     }
     // Rethrow unexpected errors

@@ -166,7 +166,7 @@ export async function generateVideoPrompt(params: GenerateVideoPromptParams): Pr
   }
 
   // ── Context Caching: cache system instruction + gambar hero ──
-  const cacheKey = buildCacheKey(`gemini::video::${params.singleMode}`, heroNames);
+  const cacheKey = buildCacheKey(`gemini::video::${params.singleMode}`, heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai,
     model: MODEL_NAME,
@@ -419,7 +419,7 @@ export async function generateMultiSceneVideoPrompt(params: GenerateMultiScenePa
   }
 
   // ── Context Caching ──
-  const cacheKey = buildCacheKey("gemini::video-multiscene", heroNames);
+  const cacheKey = buildCacheKey("gemini::video-multiscene", heroNames, MODEL_NAME);
   const cachedContentName = await getOrCreateCache({
     ai,
     model: MODEL_NAME,
