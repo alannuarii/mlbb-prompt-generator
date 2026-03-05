@@ -37,8 +37,7 @@ pipeline {
 
                     // Use credentials from Jenkins store
                     withCredentials([
-                        string(credentialsId: 'GEMINI_API_KEY_FREE', variable: 'FREE_KEY'),
-                        string(credentialsId: 'GEMINI_API_KEY_PAID', variable: 'PAID_KEY')
+                        string(credentialsId: 'GEMINI_API_KEY', variable: 'API_KEY')
                     ]) {
                         // Run the new container with injected environment variables
                         sh """
@@ -46,8 +45,7 @@ pipeline {
                             --name ${APP_NAME} \\
                             --restart always \\
                             -p ${HOST_PORT}:${CONTAINER_PORT} \\
-                            -e GEMINI_API_KEY_FREE=${FREE_KEY} \\
-                            -e GEMINI_API_KEY_PAID=${PAID_KEY} \\
+                            -e GEMINI_API_KEY=${API_KEY} \\
                             -e NODE_ENV=production \\
                             ${IMAGE_NAME}:latest
                         """
