@@ -5,7 +5,7 @@ export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { videoMode, heroes } = body;
+    const { videoMode, heroes, modelName } = body;
 
     // Validate heroes
     if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
@@ -60,6 +60,7 @@ export async function POST(event: APIEvent) {
         videoStyle: videoStyle || "cinematic film",
         mood: mood || "cinematic dramatic",
         soundDesign: soundDesign || "cinematic ambient",
+        modelName: modelName || undefined,
       });
     } else {
       // === SINGLE MODE ===
@@ -83,6 +84,7 @@ export async function POST(event: APIEvent) {
         mood: mood || "cinematic dramatic",
         soundDesign: soundDesign || "cinematic ambient",
         singleMode: singleMode || "frame",
+        modelName: modelName || undefined,
       });
     }
 

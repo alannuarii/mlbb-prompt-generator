@@ -7,6 +7,7 @@ import type { ScenarioSuggestion } from "../components/NarrativeInput";
 import ConfigOptions from "../components/ConfigOptions";
 import type { SceneImageData } from "../components/ConfigOptions";
 import ResultDisplay from "../components/ResultDisplay";
+import { selectedModel } from "../lib/model-store";
 
 export default function Home() {
   // Prompt mode: realistic (animation → real human) or cinematic (hyper-realistic game style)
@@ -83,6 +84,7 @@ export default function Home() {
           attributeMode: attributeMode(),
           promptMode: promptMode(),
           sceneImage: sceneImagePayload,
+          modelName: selectedModel(),
         }),
       });
 
@@ -132,6 +134,7 @@ export default function Home() {
             "Camera Angle": cameraAngle(),
             "Attribute Mode": promptMode() === "realistic" ? attributeMode() : "N/A (cinematic)",
           },
+          modelName: selectedModel(),
         }),
       });
 

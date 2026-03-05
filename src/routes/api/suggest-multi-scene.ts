@@ -5,7 +5,7 @@ export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { heroes, action } = body;
+    const { heroes, action, modelName } = body;
 
     if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
       return new Response(
@@ -46,6 +46,7 @@ export async function POST(event: APIEvent) {
         heroes: mappedHeroes,
         sceneCount,
         config: config || {},
+        modelName: modelName || undefined,
       });
 
       return new Response(
@@ -70,6 +71,7 @@ export async function POST(event: APIEvent) {
         existingScenes: existingScenes || [],
         targetSceneNumber: targetSceneNumber || 1,
         config: config || {},
+        modelName: modelName || undefined,
       });
 
       return new Response(
@@ -96,6 +98,7 @@ export async function POST(event: APIEvent) {
         totalScenes: totalScenes || 2,
         scenesToGenerate: scenesToGenerate || 1,
         config: config || {},
+        modelName: modelName || undefined,
       });
 
       return new Response(

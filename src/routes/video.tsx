@@ -6,6 +6,7 @@ import NarrativeInput from "../components/NarrativeInput";
 import type { ScenarioSuggestion } from "../components/NarrativeInput";
 import VideoConfigOptions from "../components/VideoConfigOptions";
 import ResultDisplay from "../components/ResultDisplay";
+import { selectedModel } from "../lib/model-store";
 
 export interface SceneEntry {
   id: number;
@@ -111,6 +112,7 @@ export default function VideoPage() {
           videoStyle: videoStyle(),
           mood: mood(),
           soundDesign: soundDesign(),
+          modelName: selectedModel(),
         }),
       });
       const data = await response.json();
@@ -152,6 +154,7 @@ export default function VideoPage() {
           videoStyle: videoStyle(),
           mood: mood(),
           soundDesign: soundDesign(),
+          modelName: selectedModel(),
         }),
       });
       const data = await response.json();
@@ -186,6 +189,7 @@ export default function VideoPage() {
             "Camera Movement": cameraMovement(), "Motion Intensity": motionIntensity(),
             "Video Style": videoStyle(), "Mood": mood(), "Sound Design": soundDesign(),
           },
+          modelName: selectedModel(),
         }),
       });
       const data = await response.json();
@@ -220,6 +224,7 @@ export default function VideoPage() {
           heroes: getHeroPayload(),
           sceneCount: scenes().length,
           config: getVideoConfig(),
+          modelName: selectedModel(),
         }),
       });
       const data = await response.json();
@@ -282,6 +287,7 @@ export default function VideoPage() {
           totalScenes: allScenes.length,
           scenesToGenerate,
           config: getVideoConfig(),
+          modelName: selectedModel(),
         }),
       });
       const data = await response.json();

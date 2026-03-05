@@ -1348,6 +1348,12 @@ body::before {
   background-clip: text;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
 .header-nav {
   display: flex;
   gap: var(--space-xs);
@@ -1378,6 +1384,211 @@ body::before {
 
 .nav-icon {
   font-size: 0.95rem;
+}
+
+/* ---------- Model Dropdown (Custom) ---------- */
+.model-dropdown {
+  position: relative;
+}
+
+.model-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+}
+
+.model-dropdown-trigger:hover,
+.model-dropdown-trigger.open {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+  color: var(--text-primary);
+}
+
+.model-trigger-badge {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.model-trigger-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.model-trigger-chevron {
+  width: 12px;
+  height: 12px;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.model-dropdown-trigger.open .model-trigger-chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Dropdown Panel --- */
+.model-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 280px;
+  background: rgba(18, 18, 28, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(139, 92, 246, 0.08);
+  padding: 6px;
+  z-index: 200;
+  animation: dropdownSlideIn 0.18s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- Tier Label --- */
+.model-tier-label {
+  padding: 8px 12px 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+/* --- Model Option --- */
+.model-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+}
+
+.model-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.model-option.selected {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.25);
+  color: var(--text-primary);
+}
+
+.model-option-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.model-option-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.model-option-desc {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.model-option.selected .model-option-desc {
+  color: rgba(167, 139, 250, 0.7);
+}
+
+/* --- Badge by tier --- */
+.model-option-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  font-weight: 600;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.model-option-badge.tier-flagship {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  color: #fbbf24;
+}
+
+.model-option-badge.tier-standard {
+  background: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  color: #60a5fa;
+}
+
+.model-option-badge.tier-lite {
+  background: rgba(167, 243, 208, 0.08);
+  border: 1px solid rgba(167, 243, 208, 0.15);
+  color: #6ee7b7;
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .header-right {
+    gap: var(--space-xs);
+  }
+
+  .model-trigger-name {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.7rem;
+  }
+
+  .model-dropdown-trigger {
+    padding: 5px 8px;
+    gap: 5px;
+  }
+
+  .model-trigger-badge {
+    font-size: 0.75rem;
+  }
+
+  .model-dropdown-panel {
+    min-width: 250px;
+    right: -8px;
+  }
+
+  .nav-link {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
 }
 
 /* ---------- Documentation Page ---------- */

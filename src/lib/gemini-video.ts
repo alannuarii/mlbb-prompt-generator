@@ -13,7 +13,7 @@ import {
 } from "./gemini-cache";
 import type { CacheImagePart } from "./gemini-cache";
 
-const MODEL_NAME = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 interface HeroImage {
   heroName: string;
@@ -32,6 +32,7 @@ interface GenerateVideoPromptParams {
   mood: string;
   soundDesign: string;
   singleMode: "frame" | "ingredient";
+  modelName?: string;
 }
 
 const SYSTEM_INSTRUCTION_VIDEO = `You are an expert prompt engineer specializing in AI video generation from still images. Your task is to create a highly detailed, structured JSON prompt that will be used to animate a PHOTOREALISTIC still image into a cinematic video clip.
@@ -145,6 +146,7 @@ IMPORTANT RULES:
 export async function generateVideoPrompt(params: GenerateVideoPromptParams): Promise<string> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
 
   // ── Bangun image parts dan labels ──
   const heroNames = params.heroes.map(h => h.heroName);
@@ -396,11 +398,13 @@ interface GenerateMultiSceneParams {
   videoStyle: string;
   mood: string;
   soundDesign: string;
+  modelName?: string;
 }
 
 export async function generateMultiSceneVideoPrompt(params: GenerateMultiSceneParams): Promise<string> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
 
   // ── Bangun image parts dan labels ──
   const heroNames = params.heroes.map(h => h.heroName);

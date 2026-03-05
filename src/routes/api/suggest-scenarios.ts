@@ -5,7 +5,7 @@ export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { heroes, mode, config } = body;
+    const { heroes, mode, config, modelName } = body;
 
     if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
       return new Response(
@@ -35,6 +35,7 @@ export async function POST(event: APIEvent) {
       })),
       mode: validMode,
       config: config || {},
+      modelName: modelName || undefined,
     });
 
     return new Response(

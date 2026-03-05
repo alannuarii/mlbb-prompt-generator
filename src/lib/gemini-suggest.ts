@@ -13,7 +13,7 @@ import {
 } from "./gemini-cache";
 import type { CacheImagePart } from "./gemini-cache";
 
-const MODEL_NAME = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 interface HeroImage {
   heroName: string;
@@ -25,6 +25,7 @@ interface SuggestParams {
   heroes: HeroImage[];
   mode: "realistic" | "cinematic" | "video";
   config: Record<string, string>;
+  modelName?: string;
 }
 
 // ---- System Instructions per mode (sama seperti sebelumnya) ----
@@ -113,6 +114,7 @@ function getInstruction(mode: "realistic" | "cinematic" | "video"): string {
 export async function suggestScenarios(params: SuggestParams): Promise<{ title: string; scenario: string }[]> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
   const instruction = getInstruction(params.mode);
 
   // ── Bangun image parts untuk cache ──
@@ -340,6 +342,7 @@ interface MultiSceneSuggestParams {
   heroes: HeroImage[];
   sceneCount: number;
   config: Record<string, string>;
+  modelName?: string;
 }
 
 interface SingleSceneSuggestParams {
@@ -348,6 +351,7 @@ interface SingleSceneSuggestParams {
   existingScenes: { sceneNumber: number; narrative: string }[];
   targetSceneNumber: number;
   config: Record<string, string>;
+  modelName?: string;
 }
 
 interface SceneSuggestion {
@@ -365,6 +369,7 @@ export async function suggestMultiSceneStory(
 ): Promise<{ overall_story: string; scenes: SceneSuggestion[] }> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
 
   const heroNames = params.heroes.map(h => h.heroName);
   const imageParts: CacheImagePart[] = [];
@@ -463,6 +468,7 @@ export async function suggestSceneNarrative(
 ): Promise<SceneSuggestion> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
 
   const heroNames = params.heroes.map(h => h.heroName);
   const imageParts: CacheImagePart[] = [];
@@ -625,6 +631,7 @@ interface CascadeSuggestParams {
   totalScenes: number;
   scenesToGenerate: number;
   config: Record<string, string>;
+  modelName?: string;
 }
 
 /**
@@ -636,6 +643,7 @@ export async function suggestCascadeScenes(
 ): Promise<SceneSuggestion[]> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
 
   const heroNames = params.heroes.map(h => h.heroName);
   const imageParts: CacheImagePart[] = [];

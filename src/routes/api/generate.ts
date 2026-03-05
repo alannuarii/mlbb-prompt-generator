@@ -5,7 +5,7 @@ export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { narrative, heroes, aspectRatio, quality, mood, lighting, cameraAngle, referenceMode, attributeMode, promptMode, sceneImage } = body;
+    const { narrative, heroes, aspectRatio, quality, mood, lighting, cameraAngle, referenceMode, attributeMode, promptMode, sceneImage, modelName } = body;
 
     // Validate required fields
     if (!narrative || !narrative.trim()) {
@@ -55,6 +55,7 @@ export async function POST(event: APIEvent) {
       attributeMode: attributeMode || "full-attribute",
       promptMode: promptMode || "realistic",
       sceneImage: sceneImageData,
+      modelName: modelName || undefined,
     });
 
     return new Response(

@@ -13,7 +13,7 @@ import {
 } from "./gemini-cache";
 import type { CacheImagePart } from "./gemini-cache";
 
-const MODEL_NAME = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 interface HeroImage {
   heroName: string;
@@ -36,6 +36,7 @@ interface GeneratePromptParams {
     base64Data: string;
     mimeType: string;
   };
+  modelName?: string;
 }
 
 // =============================================================================
@@ -472,6 +473,7 @@ function getSystemInstruction(promptMode: "realistic" | "cinematic", referenceMo
 export async function generatePrompt(params: GeneratePromptParams): Promise<string> {
   let ai = createGeminiClient();
   let currentKey = getAvailableKey();
+  const MODEL_NAME = params.modelName || DEFAULT_MODEL;
   const hasSceneImage = !!params.sceneImage;
   const instruction = getSystemInstruction(params.promptMode, params.referenceMode, hasSceneImage);
 
