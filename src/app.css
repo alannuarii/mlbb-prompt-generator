@@ -2399,3 +2399,551 @@ body::before {
     font-size: 0.62rem;
   }
 }
+
+/* ==========================================================================
+   RE-ACT MODE STYLES
+   ========================================================================== */
+
+/* Mode Tabs — 3 columns */
+.mode-tabs.mode-tabs-3 {
+  max-width: 560px;
+}
+
+/* Re-Act tab accent */
+.mode-tab.react-tab.active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.mode-tab.react-tab.active .tab-desc {
+  color: #fbbf24;
+}
+
+/* Re-Act Button */
+.generate-btn.react-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706, #f59e0b);
+  background-size: 200% 200%;
+}
+
+.generate-btn.react-btn:hover:not(:disabled) {
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.25), var(--shadow-md);
+}
+
+/* ---------- Video Upload ---------- */
+.react-upload-section {
+  padding: var(--space-lg);
+}
+
+.react-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  padding: var(--space-xl);
+  border: 2px dashed rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-md);
+  background: rgba(245, 158, 11, 0.03);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.react-dropzone:hover {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.react-dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+.react-dropzone-icon {
+  font-size: 2.5rem;
+  opacity: 0.7;
+}
+
+.react-dropzone-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.react-dropzone-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ---------- Video Preview ---------- */
+.react-video-preview {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.react-video-player {
+  width: 100%;
+  max-height: 250px;
+  display: block;
+  background: #000;
+}
+
+.react-video-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.react-video-filename {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.react-video-remove {
+  padding: 4px 12px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: var(--radius-full);
+  color: #f87171;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.react-video-remove:hover {
+  background: rgba(248, 113, 113, 0.25);
+  border-color: #f87171;
+}
+
+/* ---------- Analyze Button ---------- */
+.react-analyze-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  margin-top: var(--space-md);
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(217, 119, 6, 0.12));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  color: #fbbf24;
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.react-analyze-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.2));
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.react-analyze-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- Analyzing State ---------- */
+.react-analyzing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  animation: suggestPulse 1.5s ease-in-out infinite;
+}
+
+/* ---------- Error ---------- */
+.react-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(248, 113, 113, 0.06);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: #f87171;
+}
+
+/* ---------- Analysis Result ---------- */
+.react-analysis-section {
+  padding: var(--space-lg);
+}
+
+.react-summary {
+  padding: var(--space-md);
+  background: rgba(245, 158, 11, 0.04);
+  border: 1px solid rgba(245, 158, 11, 0.12);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.react-summary p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ---------- Character Mapping ---------- */
+.react-mapping-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-accent);
+  margin-bottom: var(--space-md);
+}
+
+.react-mapping-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.react-mapping-card {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+  animation: fadeSlideIn 0.3s ease;
+}
+
+.react-mapping-card:hover {
+  border-color: var(--border-glass-hover);
+}
+
+.react-char-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.react-char-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.react-char-desc {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.react-char-role {
+  display: inline-block;
+  padding: 1px 8px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-accent);
+  text-transform: capitalize;
+}
+
+.react-char-arrow {
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+.react-hero-select {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.react-hero-select .config-select {
+  width: 100%;
+}
+
+/* Hero image upload row */
+.react-hero-image-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.react-hero-thumb {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid rgba(52, 211, 153, 0.4);
+  flex-shrink: 0;
+}
+
+.react-hero-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.react-hero-check {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #34d399;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+}
+
+.react-hero-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.react-hero-upload-btn:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: var(--text-accent);
+}
+
+/* ---------- Appearance Mode Toggle ---------- */
+.react-appearance-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.react-appearance-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.react-appearance-toggle {
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.react-appearance-btn {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.react-appearance-btn:hover:not(.active) {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.react-appearance-btn.active.full {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+}
+
+.react-appearance-btn.active.adapt {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.react-appearance-btn.active.face {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.3);
+  color: #f472b6;
+}
+
+/* ---------- Config Badge ---------- */
+.react-config-badge {
+  margin-left: auto;
+  padding: 2px 10px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #fbbf24;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.react-reset-btn {
+  margin-left: var(--space-sm);
+  padding: 2px 10px;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: var(--radius-full);
+  color: #f87171;
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.react-reset-btn:hover {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+/* ---------- Scene Preview ---------- */
+.react-scenes-preview {
+  padding: var(--space-lg);
+}
+
+.react-scenes-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.react-scene-item {
+  padding: var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.react-scene-item:hover {
+  border-color: var(--border-glass-hover);
+}
+
+.react-scene-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.react-scene-time {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.react-scene-narrative {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-sm);
+}
+
+.react-scene-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.react-scene-tag {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- Re-Act Responsive ---------- */
+@media (max-width: 768px) {
+  .react-mapping-card {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .react-char-arrow {
+    transform: rotate(90deg);
+    justify-content: center;
+    padding: 0;
+  }
+
+  .react-appearance-toggle {
+    flex-direction: column;
+  }
+
+  .react-appearance-btn {
+    text-align: left;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .mode-tabs.mode-tabs-3 {
+    max-width: 100%;
+  }
+
+  .mode-tabs.mode-tabs-3 .mode-tab {
+    padding: 8px 8px;
+    font-size: 0.75rem;
+  }
+
+  .mode-tabs.mode-tabs-3 .tab-icon {
+    font-size: 1rem;
+  }
+}

@@ -1,11 +1,44 @@
 import type { APIEvent } from "@solidjs/start/server";
 import { generateVideoPrompt, generateMultiSceneVideoPrompt } from "../../lib/gemini-video";
+import { generateReActPrompt } from "../../lib/gemini-react";
 
 export async function POST(event: APIEvent) {
   try {
     const body = await new Response(event.request.body).json();
 
-    const { videoMode, heroes, modelName } = body;
+    const { videoMode, modelName } = body;
+
+    // === RE-ACT MODE (no hero selector — uses character mappings) ===
+    if (videoMode === "re-act") {
+      const { videoAnalysis, characterMappings, configOverrides } = body;
+
+      if (!videoAnalysis || !characterMappings || characterMappings.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Video analysis and character mappings are required for Re-Act mode" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const result = await generateReActPrompt({
+        videoAnalysis,
+        characterMappings,
+        configOverrides: configOverrides || {
+          aspectRatio: "16:9",
+          videoStyle: "cinematic film",
+          mood: "cinematic dramatic",
+          soundDesign: "cinematic ambient",
+        },
+        modelName: modelName || undefined,
+      });
+
+      return new Response(
+        JSON.stringify({ result }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // === STANDARD MODES (single / multi-scene) ===
+    const { heroes } = body;
 
     // Validate heroes
     if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
