@@ -7,16 +7,16 @@ import { GoogleGenAI } from "@google/genai";
 let cachedKey: string | null = null;
 
 /**
- * Mendapatkan API key dari environment variable GEMINI_API_KEY.
+ * Mendapatkan API key dari environment variable MLBB_GEMINI_API_KEY.
  */
 function getApiKey(): string {
   if (cachedKey) return cachedKey;
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.MLBB_GEMINI_API_KEY;
 
   if (!apiKey) {
     throw new Error(
-      "No Gemini API key configured. Set GEMINI_API_KEY in .env"
+      "No Gemini API key configured. Set MLBB_GEMINI_API_KEY in .env"
     );
   }
 

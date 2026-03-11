@@ -4,8 +4,8 @@ pipeline {
     environment {
         APP_NAME = "mlbb-prompt-generator"
         IMAGE_NAME = "mlbb-prompt-generator"
-        CONTAINER_PORT = "8000"
-        HOST_PORT = "8000"
+        CONTAINER_PORT = "3000"
+        HOST_PORT = "3008"
     }
 
     stages {
@@ -37,7 +37,7 @@ pipeline {
 
                     // Use credentials from Jenkins store
                     withCredentials([
-                        string(credentialsId: 'GEMINI_API_KEY', variable: 'API_KEY')
+                        string(credentialsId: 'mlbb-gemini-api-key', variable: 'API_KEY')
                     ]) {
                         // Run the new container with injected environment variables
                         sh """
@@ -45,8 +45,7 @@ pipeline {
                             --name ${APP_NAME} \\
                             --restart always \\
                             -p ${HOST_PORT}:${CONTAINER_PORT} \\
-                            -e GEMINI_API_KEY=${API_KEY} \\
-                            -e NODE_ENV=production \\
+                            -e MLBB_GEMINI_API_KEY=${API_KEY} \\
                             ${IMAGE_NAME}:latest
                         """
                     }
